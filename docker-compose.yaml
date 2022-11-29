@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  wallenda:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ./wallenda
+    command:
+    - process
+    depends_on:
+      - nats
+    environment:
+      WALLENDA_DEVELOPMENT: true
+      WALLENDA_NATS_URL: nats
+      WALLENDA_NATS_STREAM_NAME: "wallenda"
+      WALLENDA_KUBE_CONFIG_PATH: /root/.kube/config
+      WALLENDA_NATS_SUBJECT_PREFIX: 'events'
+      WALLENDA_CHART_PATH: /helm/chart.tgz
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    restart: unless-stopped
+    volumes:
+      - ${WALLENDA_CHART_PATH}:/helm/chart.tgz
+      - ${WALLENDA_KUBE_CONFIG_PATH}:/root/.kube/config
+    networks:
+      - wallenda
+
+  nats:
+    image: nats:latest
+    command:
+      - --jetstream
+    ports:
+      - "4222:4222"
+    restart: unless-stopped
+    networks:
+      - wallenda
+  nats-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.devel
+    depends_on:
+      - nats
+    restart: on-failure
+    command: ["stream", "--server=nats", "add", "wallenda", "--subjects=events.>", "--storage=memory", "--replicas=1", "--retention=limits", "--discard=old", "--max-msgs=-1", "--max-msgs-per-subject=-1", "--max-bytes=-1", "--max-age=-1", "--max-msg-size=-1", "--dupe-window='2m0s'", "--no-allow-rollup", "--deny-delete", "--deny-purge"]
+    networks:
+      - wallenda
+  nats-tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.devel
+    depends_on:
+      - nats
+    restart: unless-stopped
+    entrypoint: ["/bin/sh"]
+    command: ["-c","sleep infinity"]
+    networks:
+      - wallenda  
+
+networks:
+  wallenda:
