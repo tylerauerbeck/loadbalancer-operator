@@ -13,12 +13,12 @@ COPY . ./
 
 # Build the binary.
 # -mod=readonly ensures immutable go.mod and go.sum in container builds.
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o wallenda 
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o loadbalanceroperator 
 
 FROM gcr.io/distroless/static
 
 # Copy the binary to the production image from the builder stage.
-COPY --from=builder /app/wallenda /wallenda
+COPY --from=builder /app/loadbalanceroperator /loadbalanceroperator
 
-ENTRYPOINT ["/wallenda"]
+ENTRYPOINT ["/loadbalanceroperator"]
 CMD ["process"]
