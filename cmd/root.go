@@ -37,7 +37,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "wallenda",
+	Use:   "loadbalanceroperator",
 	Short: "A controller for processing requests for loadbalancers from a specified queue.",
 	Long:  `A controller for processing requests for loadbalancers from a specified queue.`,
 }
@@ -51,7 +51,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.wallenda.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.loadbalanceroperator.yaml)")
 
 	rootCmd.PersistentFlags().Bool("debug", false, "enable debug logging")
 	viperBindFlag("logging.debug", rootCmd.PersistentFlags().Lookup("debug"))
@@ -68,7 +68,7 @@ func init() {
 	rootCmd.PersistentFlags().String("nats-subject-prefix", "events.>", "prefix for NATS subjects")
 	viperBindFlag("nats.subject-prefix", rootCmd.PersistentFlags().Lookup("nats-subject-prefix"))
 
-	rootCmd.PersistentFlags().String("nats-stream-name", "wallenda", "prefix for NATS subjects")
+	rootCmd.PersistentFlags().String("nats-stream-name", "loadbalanceroperator", "prefix for NATS subjects")
 	viperBindFlag("nats.stream-name", rootCmd.PersistentFlags().Lookup("nats-stream-name"))
 
 	rootCmd.PersistentFlags().String("healthcheck-port", ":8080", "port to run healthcheck probe on")
@@ -96,14 +96,14 @@ func initConfig() {
 		home, err := homedir.Dir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".wallenda" (without extension).
+		// Search config in home directory with name ".loadbalanceroperator" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".wallenda")
+		viper.SetConfigName(".loadbalanceroperator")
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
-	viper.SetEnvPrefix("wallenda")
+	viper.SetEnvPrefix("loadbalanceroperator")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
@@ -131,7 +131,7 @@ func setupLogging() {
 		panic(err)
 	}
 
-	logger = l.Sugar().With("app", "wallenda")
+	logger = l.Sugar().With("app", "loadbalanceroperator")
 	defer logger.Sync() //nolint:errcheck
 }
 

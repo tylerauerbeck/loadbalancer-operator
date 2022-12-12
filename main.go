@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/infratographer/wallenda/cmd"
+import "go.infratographer.sh/loadbalanceroperator/cmd"
 
 func main() {
 	cmd.Execute()

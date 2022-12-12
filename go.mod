@@ -1,4 +1,4 @@
-module github.com/infratographer/wallenda
+module go.infratographer.sh/loadbalanceroperator
 
 go 1.19
 

@@ -1,4 +1,4 @@
-// Package srv provides server connectivity for wallenda
+// Package srv provides server connectivity for loadbalanceroperator
 package srv
 
 import (
@@ -38,7 +38,7 @@ func (s *Server) CreateNamespace(groupID string) error {
 		Spec:   &applyv1.NamespaceSpecApplyConfiguration{},
 		Status: &applyv1.NamespaceStatusApplyConfiguration{},
 	}
-	_, err = kc.CoreV1().Namespaces().Apply(s.Context, &apSpec, metav1.ApplyOptions{FieldManager: "wallenda"})
+	_, err = kc.CoreV1().Namespaces().Apply(s.Context, &apSpec, metav1.ApplyOptions{FieldManager: "loadbalanceroperator"})
 
 	if err != nil {
 		s.Logger.Errorf("unable to create namespace: %s", err)

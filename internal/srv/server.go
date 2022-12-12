@@ -25,7 +25,7 @@ type Server struct {
 
 // Run will start the server queue connections and healthcheck endpoints
 func (s *Server) Run(ctx context.Context) error {
-	subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.>", s.Prefix), "wallenda-workers", s.MessageHandler, nats.BindStream(s.StreamName))
+	subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.>", s.Prefix), "loadbalanceroperator-workers", s.MessageHandler, nats.BindStream(s.StreamName))
 	if err != nil {
 		s.Logger.Errorf("unable to subscribe to queue: %s", err)
 		return err

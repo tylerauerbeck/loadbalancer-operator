@@ -23,7 +23,7 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/infratographer/wallenda/internal/srv"
+	"go.infratographer.sh/loadbalanceroperator/internal/srv"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
