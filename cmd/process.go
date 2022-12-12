@@ -23,13 +23,14 @@ import (
 	"os/signal"
 	"strings"
 
-	"go.infratographer.sh/loadbalanceroperator/internal/srv"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"go.infratographer.sh/loadbalanceroperator/internal/srv"
 )
 
 // processCmd represents the base command when called without any subcommands

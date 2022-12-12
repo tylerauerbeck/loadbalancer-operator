@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  dev:
+    image: devcontainer
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    depends_on:
+      - nats-init
+    volumes:
+      - ..:/workspace:cached
+    networks:
+      - loadbalanceroperator 
+
   loadbalanceroperator:
     build:
       context: .
@@ -11,7 +24,7 @@ services:
     depends_on:
       - nats
     environment:
-      LOADBALANCEROPERATOR_DEVELOPMENT: true
+      LOADBALANCEROPERATOR_DEVELOPMENT: "true"
       LOADBALANCEROPERATOR_NATS_URL: nats
       LOADBALANCEROPERATOR_NATS_STREAM_NAME: "loadbalanceroperator"
       LOADBALANCEROPERATOR_KUBE_CONFIG_PATH: /root/.kube/config
@@ -25,7 +38,7 @@ services:
       - ${LOADBALANCEROPERATOR_CHART_PATH}:/helm/chart.tgz
       - ${LOADBALANCEROPERATOR_KUBE_CONFIG_PATH}:/root/.kube/config
     networks:
-      - loadbalanceroperator 
+      - loadbalanceroperator
 
   nats:
     image: nats:latest
@@ -35,28 +48,15 @@ services:
       - "4222:4222"
     restart: unless-stopped
     networks:
-      - loadbalanceroperator 
+      - loadbalanceroperator
   nats-init:
-    build:
-      context: .
-      dockerfile: Dockerfile.devel
+    image: devcontainer
     depends_on:
       - nats
     restart: on-failure
-    command: ["stream", "--server=nats", "add", "loadbalanceroperator", "--subjects=events.>", "--storage=memory", "--replicas=1", "--retention=limits", "--discard=old", "--max-msgs=-1", "--max-msgs-per-subject=-1", "--max-bytes=-1", "--max-age=-1", "--max-msg-size=-1", "--dupe-window='2m0s'", "--no-allow-rollup", "--deny-delete", "--deny-purge"]
+    command: ["nats", "stream", "--server=nats", "add", "loadbalanceroperator", "--subjects=events.>", "--storage=memory", "--replicas=1", "--retention=limits", "--discard=old", "--max-msgs=-1", "--max-msgs-per-subject=-1", "--max-bytes=-1", "--max-age=-1", "--max-msg-size=-1", "--dupe-window='2m0s'", "--no-allow-rollup", "--deny-delete", "--deny-purge"]
     networks:
       - loadbalanceroperator 
-  nats-tools:
-    build:
-      context: .
-      dockerfile: Dockerfile.devel
-    depends_on:
-      - nats
-    restart: unless-stopped
-    entrypoint: ["/bin/sh"]
-    command: ["-c","sleep infinity"]
-    networks:
-      - loadbalanceroperator  
 
 networks:
   loadbalanceroperator:

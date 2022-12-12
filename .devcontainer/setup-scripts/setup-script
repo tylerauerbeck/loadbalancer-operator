@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo "Setting default NATS context"
+nats context add nats --server nats:4222 --description 'nats dev' --select
+
+echo "Downloading go mods"
+go mod download
+
+echo "Creating kind cluster"
+kind delete cluster
+kind create cluster
+kind get kubeconfig > kubeconfig
+
+echo "Configuring Helm Repos"
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+echo "Getting HAProxy"
+helm pull bitnami/haproxy --version ${HAPROXY_VERSION}
+mv haproxy-${HAPROXY_VERSION}.tgz haproxy.tgz
+
+#echo "Startup loadbalanceroperator"
+#docker compose -f docker-compose.yaml up -d loadbalanceroperator 
