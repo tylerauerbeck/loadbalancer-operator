@@ -1,8 +1,6 @@
 linters-settings:
   goimports:
-    local-prefixes: go.equinixmetal.net/governor
-  gofumpt:
-    extra-rules: true
+    local-prefixes: go.infratographer.sh/loadbalanceroperator
 
 linters:
   enable:
@@ -24,19 +22,15 @@ linters:
     - gocyclo
     - goerr113
     - gofmt
-    # - gofumpt
     - goimports
-    - golint
     - gomnd
     - govet
-    - maligned
     - misspell
     - noctx
     - stylecheck
     - whitespace
     - wsl
 
-    # - bod
 issues:
   exclude:
     # Default excludes from `golangci-lint run --help` with EXC0002 removed
