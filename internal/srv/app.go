@@ -14,6 +14,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	nameLength = 63
+)
+
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
 func (s *Server) CreateNamespace(groupID string) error {
@@ -51,7 +55,10 @@ func (s *Server) CreateNamespace(groupID string) error {
 // CreateApp deploys a loadBalancer based upon the configuration provided
 // from the event that is processed.
 func (s *Server) CreateApp(name string, chartPath string, namespace string) error {
-	releaseName := fmt.Sprintf("%s-%s", name, namespace)
+	releaseName := fmt.Sprintf("lb-%s-%s", name, namespace)
+	if len(releaseName) > nameLength {
+		releaseName = releaseName[0:nameLength]
+	}
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {

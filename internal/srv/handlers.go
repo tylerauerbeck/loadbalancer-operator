@@ -1,56 +1,56 @@
 package srv
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"strings"
 
-	"github.com/Moby/Moby/pkg/namesgenerator"
 	"github.com/nats-io/nats.go"
+
+	events "go.infratographer.sh/loadbalanceroperator/pkg/events/v1alpha1"
+	"go.infratographer.sh/loadbalanceroperator/pkg/pubsubx"
 )
 
 // MessageHandler handles the routing of events from specified queues
 func (s *Server) MessageHandler(m *nats.Msg) {
-	switch m.Subject {
-	case fmt.Sprintf("%s.create", s.Prefix):
-		err := s.createMessageHandler(m)
-		if err != nil {
+	msg := pubsubx.Message{}
+	if err := json.Unmarshal(m.Data, &msg); err != nil {
+		s.Logger.Errorln("Unable to process data in message: %s", err)
+	}
+
+	switch msg.EventType {
+	case events.EVENTCREATE:
+		if err := s.createMessageHandler(&msg); err != nil {
 			s.Logger.Errorln("unable to process create")
-			// Redeliver message
-			if err := m.Nak(); err != nil {
-				s.Logger.Errorln("unable to process message", err)
-			}
 		}
-	case fmt.Sprintf("%s.update", s.Prefix):
-		err := s.updateMessageHandler(m)
+	case events.EVENTUPDATE:
+		err := s.updateMessageHandler(&msg)
 		if err != nil {
 			s.Logger.Errorln("unable to process update")
-			// Redeliver message
-			if err := m.Nak(); err != nil {
-				s.Logger.Errorln("unable to process message", err)
-			}
 		}
 	default:
 		s.Logger.Debug("This is some other set of queues that we don't know about.")
 	}
 }
 
-func (s *Server) createMessageHandler(m *nats.Msg) error {
-	name := strings.ReplaceAll(namesgenerator.GetRandomName(0), "_", "-")
+func (s *Server) createMessageHandler(m *pubsubx.Message) error {
+	lbdata := events.LoadBalancerData{}
 
-	if err := s.CreateNamespace(string(m.Data)); err != nil {
+	if err := parseLBData(&m.AdditionalData, &lbdata); err != nil {
 		return err
 	}
 
-	if err := s.CreateApp(name, s.ChartPath, string(m.Data)); err != nil {
+	if err := s.CreateNamespace(m.SubjectURN); err != nil {
+		return err
+	}
+
+	if err := s.CreateApp(lbdata.LoadBalancerID.String(), s.ChartPath, m.SubjectURN); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Server) updateMessageHandler(m *nats.Msg) error {
-	s.Logger.Infoln("updating")
+func (s *Server) updateMessageHandler(m *pubsubx.Message) error {
 	return nil
 }
 
@@ -83,6 +83,19 @@ func (s *Server) ExposeEndpoint(subscription *nats.Subscription, port string) er
 
 		_ = checks.ListenAndServe()
 	}()
+
+	return nil
+}
+
+func parseLBData(data *map[string]interface{}, lbdata *events.LoadBalancerData) error {
+	d, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(d, &lbdata); err != nil {
+		return err
+	}
 
 	return nil
 }
