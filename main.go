@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "go.infratographer.sh/loadbalanceroperator/cmd"
+import "go.infratographer.com/loadbalanceroperator/cmd"
 
 func main() {
 	cmd.Execute()

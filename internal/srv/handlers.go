@@ -6,8 +6,9 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	events "go.infratographer.sh/loadbalanceroperator/pkg/events/v1alpha1"
-	"go.infratographer.sh/loadbalanceroperator/pkg/pubsubx"
+	"go.infratographer.com/x/pubsubx"
+
+	events "go.infratographer.com/loadbalanceroperator/pkg/events/v1alpha1"
 )
 
 // MessageHandler handles the routing of events from specified queues

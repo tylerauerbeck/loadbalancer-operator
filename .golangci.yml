@@ -1,6 +1,6 @@
 linters-settings:
   goimports:
-    local-prefixes: go.infratographer.sh/loadbalanceroperator
+    local-prefixes: go.infratographer.com/loadbalanceroperator
 
 linters:
   enable:
