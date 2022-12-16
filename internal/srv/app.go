@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	nameLength = 63
+	nameLength = 53
 )
 
 // CreateNamespace creates namespaces for the specified group that is

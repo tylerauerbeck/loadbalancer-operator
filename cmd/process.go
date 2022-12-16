@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"go.infratographer.sh/loadbalanceroperator/internal/srv"
+	"go.infratographer.com/loadbalanceroperator/internal/srv"
 )
 
 // processCmd represents the base command when called without any subcommands
