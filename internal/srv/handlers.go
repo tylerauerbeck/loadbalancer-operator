@@ -20,12 +20,12 @@ func (s *Server) MessageHandler(m *nats.Msg) {
 	switch msg.EventType {
 	case events.EVENTCREATE:
 		if err := s.createMessageHandler(&msg); err != nil {
-			s.Logger.Errorln("unable to process create")
+			s.Logger.Errorf("unable to process create: %s", err)
 		}
 	case events.EVENTUPDATE:
 		err := s.updateMessageHandler(&msg)
 		if err != nil {
-			s.Logger.Errorln("unable to process update")
+			s.Logger.Errorf("unable to process update: %s", err)
 		}
 	default:
 		s.Logger.Debug("This is some other set of queues that we don't know about.")

@@ -72,6 +72,7 @@ func process(ctx context.Context) error {
 		Logger:          logger,
 		Prefix:          viper.GetString("nats.subject-prefix"),
 		ChartPath:       viper.GetString("chart-path"),
+		ValuesPath:      viper.GetString("chart-values-path"),
 		JetstreamClient: js,
 	}
 
