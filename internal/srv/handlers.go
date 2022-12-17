@@ -26,7 +26,7 @@ func (s *Server) MessageHandler(m *nats.Msg) {
 	case events.EVENTUPDATE:
 		err := s.updateMessageHandler(&msg)
 		if err != nil {
-			s.Logger.Errorf("unable to process update: %s", err)
+			s.Logger.Errorw("unable to process update", "error", err.Error())
 		}
 	default:
 		s.Logger.Debug("This is some other set of queues that we don't know about.")
@@ -36,7 +36,7 @@ func (s *Server) MessageHandler(m *nats.Msg) {
 func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 	lbdata := events.LoadBalancerData{}
 
-	if err := parseLBData(&m.AdditionalData, &lbdata); err != nil {
+	if err := s.parseLBData(&m.AdditionalData, &lbdata); err != nil {
 		return err
 	}
 
@@ -88,13 +88,15 @@ func (s *Server) ExposeEndpoint(subscription *nats.Subscription, port string) er
 	return nil
 }
 
-func parseLBData(data *map[string]interface{}, lbdata *events.LoadBalancerData) error {
+func (s *Server) parseLBData(data *map[string]interface{}, lbdata *events.LoadBalancerData) error {
 	d, err := json.Marshal(data)
 	if err != nil {
+		s.Logger.Errorw("unable to load data from event", "error", err.Error())
 		return err
 	}
 
 	if err := json.Unmarshal(d, &lbdata); err != nil {
+		s.Logger.Errorw("unable to parse event data", "error", err.Error())
 		return err
 	}
 

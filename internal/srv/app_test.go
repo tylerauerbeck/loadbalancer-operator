@@ -8,25 +8,47 @@ import (
 )
 
 func TestGetHelmValues(t *testing.T) {
-	fs := fstest.MapFS{
-		"values.yaml": {
-			Data: []byte("hello: world"),
+	type testCase struct {
+		name        string
+		content     *fstest.MapFS
+		file        string
+		expectError bool
+	}
+
+	testCases := []testCase{
+		{
+			name:        "valid yaml",
+			expectError: false,
+			file:        "values.yaml",
+			content: &fstest.MapFS{
+				"values.yaml": {
+					Data: []byte("hello: world"),
+				},
+			},
+		},
+		{
+			name:        "invalid yaml",
+			expectError: true,
+			file:        "values.yaml",
+			content: &fstest.MapFS{
+				"values.yaml": {
+					Data: []byte("hello there"),
+				},
+			},
 		},
 	}
 
-	content, _ := fs.ReadFile("vales.yaml")
+	for _, tcase := range testCases {
+		t.Run(tcase.name, func(t *testing.T) {
+			content, _ := tcase.content.ReadFile(tcase.file)
+			values, err := getHelmValues(content)
 
-	values, err := getHelmValues(content)
-	assert.NotNil(t, values)
-	assert.Nil(t, err)
-
-	fs = fstest.MapFS{
-		"values.yaml": {
-			Data: []byte("hello there"),
-		},
+			if tcase.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, values)
+			}
+		})
 	}
-	content, _ = fs.ReadFile("values.yaml")
-
-	_, err = getHelmValues(content)
-	assert.NotNil(t, err)
 }
