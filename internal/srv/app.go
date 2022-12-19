@@ -25,8 +25,8 @@ const (
 // provided in the event received
 func (s *Server) CreateNamespace(groupID string) error {
 	s.Logger.Debugf("ensuring namespace %s exists", groupID)
-	kc, err := kubernetes.NewForConfig(s.KubeClient)
 
+	kc, err := kubernetes.NewForConfig(s.KubeClient)
 	if err != nil {
 		s.Logger.Errorln("unable to authenticate against kubernetes cluster")
 		return err
@@ -91,7 +91,7 @@ func (s *Server) CreateApp(name string, chartPath string, namespace string) erro
 
 	})
 	if err != nil {
-		s.Logger.Errorln("unable to initialize helm client: %s", err)
+		s.Logger.Errorw("unable to initialize helm configuration", "error", err)
 		return err
 	}
 
