@@ -77,6 +77,9 @@ func init() {
 	rootCmd.PersistentFlags().String("chart-path", "", "path that contains deployment chart")
 	viperBindFlag("chart-path", rootCmd.PersistentFlags().Lookup("chart-path"))
 
+	rootCmd.PersistentFlags().String("chart-values-path", "", "path that contains values file to configure deployment chart")
+	viperBindFlag("chart-values-path", rootCmd.PersistentFlags().Lookup("chart-values-path"))
+
 	rootCmd.PersistentFlags().String("kube-config-path", "", "path to a valid kubeconfig file")
 	viperBindFlag("kube-config-path", rootCmd.PersistentFlags().Lookup("kube-config-path"))
 

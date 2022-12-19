@@ -3,7 +3,10 @@ package srv
 
 import (
 	"fmt"
+	"os"
 
+	"gopkg.in/yaml.v3"
+	"helm.sh/helm/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,6 +69,16 @@ func (s *Server) CreateApp(name string, chartPath string, namespace string) erro
 		return err
 	}
 
+	vf, err := os.ReadFile(s.ValuesPath)
+	if err != nil {
+		return err
+	}
+
+	values, err := s.getHelmValues(vf)
+	if err != nil {
+		return err
+	}
+
 	config := &action.Configuration{}
 	cliopt := genericclioptions.NewConfigFlags(false)
 	wrapper := func(*rest.Config) *rest.Config {
@@ -85,7 +98,7 @@ func (s *Server) CreateApp(name string, chartPath string, namespace string) erro
 	hc := action.NewInstall(config)
 	hc.ReleaseName = releaseName
 	hc.Namespace = namespace
-	_, err = hc.Run(chart, nil)
+	_, err = hc.Run(chart, values)
 
 	if err != nil {
 		s.Logger.Errorf("unable to deploy %s to %s", releaseName, namespace)
@@ -95,4 +108,14 @@ func (s *Server) CreateApp(name string, chartPath string, namespace string) erro
 	s.Logger.Infof("%s deployed to %s successfully", releaseName, namespace)
 
 	return nil
+}
+
+func (s *Server) getHelmValues(content []byte) (chartutil.Values, error) {
+	values := chartutil.Values{}
+	if err := yaml.Unmarshal(content, &values); err != nil {
+		s.Logger.Errorw("unable to load values data", "error", err)
+		return nil, err
+	}
+
+	return values, nil
 }

@@ -18,9 +18,9 @@ type Server struct {
 	KubeClient      *rest.Config
 	JetstreamClient nats.JetStreamContext
 	Debug           bool
-	Metro           string
 	Prefix          string
 	ChartPath       string
+	ValuesPath      string
 }
 
 // Run will start the server queue connections and healthcheck endpoints

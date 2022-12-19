@@ -24,30 +24,53 @@ var (
 )
 
 func TestParseLBData(t *testing.T) {
-	t.Parallel()
+	type testCase struct {
+		name        string
+		data        map[string]interface{}
+		expectError bool
+	}
 
-	data := make(map[string]interface{})
-	data["load_balancer_id"] = uuid.New()
-	data["location_id"] = uuid.New()
-	msg.AdditionalData = data
+	testCases := []testCase{
+		{
+			name:        "valid data",
+			expectError: false,
+			data: map[string]interface{}{
+				"load_balancer_id": uuid.New(),
+				"location_id":      uuid.New(),
+			},
+		},
+		{
+			name:        "unable to parse event data",
+			expectError: true,
+			data: map[string]interface{}{
+				"load_balancer_id": 1,
+				"location_id":      2,
+			},
+		},
+		{
+			name:        "unable to load event data",
+			expectError: true,
+			data: map[string]interface{}{
+				"other field": make(chan int),
+			},
+		},
+	}
 
-	lbData := events.LoadBalancerData{}
-	err := parseLBData(&data, &lbData)
+	for _, tcase := range testCases {
+		t.Run(tcase.name, func(t *testing.T) {
+			lbData := events.LoadBalancerData{}
+			srv := &Server{
+				Logger: setupTestLogger(t, t.Name()),
+			}
+			msg.AdditionalData = tcase.data
+			err := srv.parseLBData(&tcase.data, &lbData)
 
-	assert.Nil(t, err)
-	assert.Equal(t, lbData.LoadBalancerID, data["load_balancer_id"])
-	assert.Equal(t, lbData.LocationID, data["location_id"])
-
-	data["load_balancer_id"] = 1
-	data["location_id"] = 2
-	msg.AdditionalData = data
-
-	err = parseLBData(&data, &lbData)
-
-	assert.NotNil(t, err)
-
-	data["thing"] = make(chan int)
-	err = parseLBData(&data, &lbData)
-
-	assert.NotNil(t, err)
+			if tcase.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, lbData)
+			}
+		})
+	}
 }
