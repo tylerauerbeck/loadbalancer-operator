@@ -65,7 +65,7 @@ func init() {
 	rootCmd.PersistentFlags().String("nats-nkey", "", "Path to the file containing the NATS nkey keypair")
 	viperBindFlag("nats.nkey", rootCmd.PersistentFlags().Lookup("nats-nkey"))
 
-	rootCmd.PersistentFlags().String("nats-subject-prefix", "events.>", "prefix for NATS subjects")
+	rootCmd.PersistentFlags().String("nats-subject-prefix", "", "prefix for NATS subjects")
 	viperBindFlag("nats.subject-prefix", rootCmd.PersistentFlags().Lookup("nats-subject-prefix"))
 
 	rootCmd.PersistentFlags().String("nats-stream-name", "loadbalanceroperator", "prefix for NATS subjects")
@@ -82,6 +82,12 @@ func init() {
 
 	rootCmd.PersistentFlags().String("kube-config-path", "", "path to a valid kubeconfig file")
 	viperBindFlag("kube-config-path", rootCmd.PersistentFlags().Lookup("kube-config-path"))
+
+	rootCmd.PersistentFlags().StringSlice("helm-cpu-flag", nil, "flag to set cpu limit for helm chart")
+	viperBindFlag("helm-cpu-flag", rootCmd.PersistentFlags().Lookup("helm-cpu-flag"))
+
+	rootCmd.PersistentFlags().StringSlice("helm-memory-flag", nil, "flag to set memory limit for helm chart")
+	viperBindFlag("helm-memory-flag", rootCmd.PersistentFlags().Lookup("helm-memory-flag"))
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

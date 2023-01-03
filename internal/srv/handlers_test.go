@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 
@@ -60,7 +61,7 @@ func TestParseLBData(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			lbData := events.LoadBalancerData{}
 			srv := &Server{
-				Logger: setupTestLogger(t, t.Name()),
+				Logger: zap.NewNop().Sugar(),
 			}
 			msg.AdditionalData = tcase.data
 			err := srv.parseLBData(&tcase.data, &lbData)

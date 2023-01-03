@@ -7,6 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
 )
 
@@ -19,6 +20,7 @@ type Server struct {
 	JetstreamClient nats.JetStreamContext
 	Debug           bool
 	Prefix          string
+	Chart           *chart.Chart
 	ChartPath       string
 	ValuesPath      string
 }

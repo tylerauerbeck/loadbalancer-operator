@@ -18,11 +18,11 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -62,6 +62,11 @@ func process(ctx context.Context) error {
 		return err
 	}
 
+	chart, err := loadHelmChart(viper.GetString("chart-path"))
+	if err != nil {
+		logger.Fatalw("failed to load helm chart from provided path", "error", err)
+	}
+
 	cx, cancel := context.WithCancel(ctx)
 
 	server := &srv.Server{
@@ -71,7 +76,7 @@ func process(ctx context.Context) error {
 		Debug:           viper.GetBool("logging.debug"),
 		Logger:          logger,
 		Prefix:          viper.GetString("nats.subject-prefix"),
-		ChartPath:       viper.GetString("chart-path"),
+		Chart:           chart,
 		ValuesPath:      viper.GetString("chart-values-path"),
 		JetstreamClient: js,
 	}
@@ -139,23 +144,23 @@ func newKubeAuth(path string) (*rest.Config, error) {
 }
 
 func validateFlags() error {
-	errs := []string{}
-
 	if viper.GetString("nats.subject-prefix") == "" {
-		errs = append(errs, ErrNATSURLRequired.Error())
-	}
-
-	if viper.GetString("nats.stream-name") == "" {
-		errs = append(errs, ErrNATSStreamName.Error())
+		return ErrNATSSubjectPrefix
 	}
 
 	if viper.GetString("chart-path") == "" {
-		errs = append(errs, ErrChartPath.Error())
+		return ErrChartPath
 	}
 
-	if len(errs) == 0 {
-		return nil
+	return nil
+}
+
+func loadHelmChart(chartPath string) (*chart.Chart, error) {
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		// logger.Errorw("failed to load helm chart", "error", err)
+		return nil, err
 	}
 
-	return fmt.Errorf(strings.Join(errs, "\n")) //nolint:goerr113
+	return chart, nil
 }

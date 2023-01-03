@@ -14,10 +14,18 @@ steps:
 
   - label: ":test_tube: test"
     key: "test"
+    env:
+      ENVTEST_K8S_VERSION: 1.25.0
+    command: |
+      echo --- install dependencies
+      go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+      echo +++ run tests
+      mkdir bin
+      KUBEBUILDER_ASSETS="$$(setup-envtest use $${ENVTEST_K8S_VERSION} --bin-dir $(PWD)/bin -p path)" go test -cover -race ./...
     plugins:
       - docker#v5.3.0:
           image: "golang:1.19"
-          command: ["go", "test", "-cover" ,"-race", "./..."]
+          # command: ["go", "test", "-cover" ,"-race", "./..."]
 
   - label: ":golang: build"
     key: "gobuild"

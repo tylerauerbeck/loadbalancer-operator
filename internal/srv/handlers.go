@@ -5,11 +5,17 @@ import (
 	"net/http"
 
 	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
 
 	"go.infratographer.com/x/pubsubx"
 
 	events "go.infratographer.com/loadbalanceroperator/pkg/events/v1alpha1"
 )
+
+type valueSet struct {
+	helmKey string
+	value   string
+}
 
 // MessageHandler handles the routing of events from specified queues
 func (s *Server) MessageHandler(m *nats.Msg) {
@@ -37,14 +43,32 @@ func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 	lbdata := events.LoadBalancerData{}
 
 	if err := s.parseLBData(&m.AdditionalData, &lbdata); err != nil {
+		s.Logger.Errorw("handler unable to parse loadbalancer data", "error", err)
 		return err
 	}
 
 	if err := s.CreateNamespace(m.SubjectURN); err != nil {
+		s.Logger.Errorw("handler unable to create required namespace", "error", err)
 		return err
 	}
 
-	if err := s.CreateApp(lbdata.LoadBalancerID.String(), s.ChartPath, m.SubjectURN); err != nil {
+	overrides := []valueSet{}
+	for _, cpuFlag := range viper.GetStringSlice("helm-cpu-flag") {
+		overrides = append(overrides, valueSet{
+			helmKey: cpuFlag,
+			value:   lbdata.Resources.CPU,
+		})
+	}
+
+	for _, memFlag := range viper.GetStringSlice("helm-memory-flag") {
+		overrides = append(overrides, valueSet{
+			helmKey: memFlag,
+			value:   lbdata.Resources.Memory,
+		})
+	}
+
+	if err := s.newDeployment(lbdata.LoadBalancerID.String(), m.SubjectURN, overrides); err != nil {
+		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
 		return err
 	}
 
