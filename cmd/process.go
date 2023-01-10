@@ -70,15 +70,15 @@ func process(ctx context.Context) error {
 	cx, cancel := context.WithCancel(ctx)
 
 	server := &srv.Server{
+		Chart:           chart,
 		Context:         cx,
-		StreamName:      viper.GetString("nats.stream-name"),
-		KubeClient:      client,
 		Debug:           viper.GetBool("logging.debug"),
+		JetstreamClient: js,
+		KubeClient:      client,
 		Logger:          logger,
 		Prefix:          viper.GetString("nats.subject-prefix"),
-		Chart:           chart,
+		StreamName:      viper.GetString("nats.stream-name"),
 		ValuesPath:      viper.GetString("chart-values-path"),
-		JetstreamClient: js,
 	}
 
 	if err := server.Run(cx); err != nil {
