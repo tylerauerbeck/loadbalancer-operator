@@ -62,8 +62,8 @@ func init() {
 	rootCmd.PersistentFlags().String("nats-url", "", "NATS server connection url")
 	viperBindFlag("nats.url", rootCmd.PersistentFlags().Lookup("nats-url"))
 
-	rootCmd.PersistentFlags().String("nats-nkey", "", "Path to the file containing the NATS nkey keypair")
-	viperBindFlag("nats.nkey", rootCmd.PersistentFlags().Lookup("nats-nkey"))
+	rootCmd.PersistentFlags().String("nats-creds-file", "", "Path to the file containing the NATS nkey keypair")
+	viperBindFlag("nats.creds-file", rootCmd.PersistentFlags().Lookup("nats-creds-file"))
 
 	rootCmd.PersistentFlags().String("nats-subject-prefix", "", "prefix for NATS subjects")
 	viperBindFlag("nats.subject-prefix", rootCmd.PersistentFlags().Lookup("nats-subject-prefix"))

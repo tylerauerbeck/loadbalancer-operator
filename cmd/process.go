@@ -104,12 +104,7 @@ func newJetstreamConnection() (nats.JetStreamContext, error) {
 
 		opts = append(opts, nats.Token(viper.GetString("nats.token")))
 	} else {
-		opt, err := nats.NkeyOptionFromSeed(viper.GetString("nats.nkey"))
-		if err != nil {
-			return nil, err
-		}
-
-		opts = append(opts, opt)
+		opts = append(opts, nats.UserCredentials(viper.GetString("nats.creds-file")))
 	}
 
 	nc, err := nats.Connect(viper.GetString("nats.url"), opts...)
