@@ -14,8 +14,10 @@ jobs:
         with:
           token: ${{ secrets.RELEASEBOT_PAT }}
           charts_dir: chart
-          charts_url: "https://auerbecklabs.github.io/charts"
+          charts_url: "https://infratographer.github.io/charts"
           repository: "charts"
+          app_version: ${{  github.ref_name }}"
+          chart_version: ${{  github.ref_name }}"
           branch: gh-pages 
 
   image-build:
