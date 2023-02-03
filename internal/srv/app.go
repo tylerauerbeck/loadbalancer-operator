@@ -80,8 +80,8 @@ func (s *Server) newHelmValues(overrides []valueSet) (map[string]interface{}, er
 
 // newDeployment deploys a loadBalancer based upon the configuration provided
 // from the event that is processed.
-func (s *Server) newDeployment(name string, namespace string, overrides []valueSet) error {
-	releaseName := fmt.Sprintf("lb-%s-%s", name, namespace)
+func (s *Server) newDeployment(name string, overrides []valueSet) error {
+	releaseName := fmt.Sprintf("lb-%s", name)
 	if len(releaseName) > nameLength {
 		releaseName = releaseName[0:nameLength]
 	}
@@ -92,7 +92,7 @@ func (s *Server) newDeployment(name string, namespace string, overrides []valueS
 		return err
 	}
 
-	client, err := s.newHelmClient(namespace)
+	client, err := s.newHelmClient(name)
 	if err != nil {
 		s.Logger.Errorln("unable to initialize helm client: %s", err)
 		return err
@@ -100,15 +100,15 @@ func (s *Server) newDeployment(name string, namespace string, overrides []valueS
 
 	hc := action.NewInstall(client)
 	hc.ReleaseName = releaseName
-	hc.Namespace = namespace
+	hc.Namespace = name
 	_, err = hc.Run(s.Chart, values)
 
 	if err != nil {
-		s.Logger.Errorf("unable to deploy %s to %s", releaseName, namespace)
+		s.Logger.Errorf("unable to deploy %s to %s", releaseName, name)
 		return err
 	}
 
-	s.Logger.Infof("%s deployed to %s successfully", releaseName, namespace)
+	s.Logger.Infof("%s deployed to %s successfully", releaseName, name)
 
 	return nil
 }

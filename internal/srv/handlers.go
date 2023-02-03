@@ -47,7 +47,7 @@ func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 		return err
 	}
 
-	if err := s.CreateNamespace(m.SubjectURN); err != nil {
+	if err := s.CreateNamespace(lbdata.LoadBalancerID.String()); err != nil {
 		s.Logger.Errorw("handler unable to create required namespace", "error", err)
 		return err
 	}
@@ -67,7 +67,7 @@ func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 		})
 	}
 
-	if err := s.newDeployment(lbdata.LoadBalancerID.String(), m.SubjectURN, overrides); err != nil {
+	if err := s.newDeployment(lbdata.LoadBalancerID.String(), overrides); err != nil {
 		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
 		return err
 	}

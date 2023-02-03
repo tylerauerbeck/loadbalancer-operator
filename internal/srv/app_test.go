@@ -225,7 +225,7 @@ func TestNewDeployment(t *testing.T) {
 			}
 
 			_ = srv.CreateNamespace(tcase.appNamespace)
-			err = srv.newDeployment(tcase.appName, tcase.appNamespace, nil)
+			err = srv.newDeployment(tcase.appName, nil)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
