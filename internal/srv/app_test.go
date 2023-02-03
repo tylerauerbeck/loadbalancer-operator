@@ -216,7 +216,7 @@ func TestNewDeployment(t *testing.T) {
 				Chart:      tcase.chart,
 			}
 
-			_ = srv.CreateNamespace(tcase.appNamespace)
+			_ = srv.CreateNamespace(tcase.appName)
 			err = srv.newDeployment(tcase.appName, nil)
 
 			if tcase.expectError {
