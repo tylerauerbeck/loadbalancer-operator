@@ -179,15 +179,6 @@ func TestNewDeployment(t *testing.T) {
 			kubeClient:   cfg,
 		},
 		{
-			name:         "invalid namespace",
-			expectError:  true,
-			appNamespace: "DarkwingDuck",
-			appName:      uuid.New().String(),
-			chart:        ch,
-			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   cfg,
-		},
-		{
 			name:         "missing values path",
 			expectError:  true,
 			appNamespace: uuid.New().String(),
@@ -225,8 +216,8 @@ func TestNewDeployment(t *testing.T) {
 				Chart:      tcase.chart,
 			}
 
-			_ = srv.CreateNamespace(tcase.appNamespace)
-			err = srv.newDeployment(tcase.appName, tcase.appNamespace, nil)
+			_ = srv.CreateNamespace(tcase.appName)
+			err = srv.newDeployment(tcase.appName, nil)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
