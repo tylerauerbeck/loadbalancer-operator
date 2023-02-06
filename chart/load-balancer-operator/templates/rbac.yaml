@@ -12,6 +12,7 @@ rules:
   - namespaces
   verbs:
   - create
+  - patch
   - get
   - list
   - patch
@@ -23,6 +24,7 @@ rules:
   - rolebindings
   verbs:
   - create
+  - patch
   - delete
   - patch
   - get

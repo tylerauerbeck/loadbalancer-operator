@@ -52,11 +52,11 @@ spec:
           {{- if .Values.operator.events.auth.secretName }}
             - name: LOADBALANCEROPERATOR_NATS_CREDS_FILE
               value: "/creds"
-          {{ end }}
+          {{- end -}}
           {{ if .Values.operator.chart.valuesPath }}
             - name: LOADBALANCEROPERATOR_CHART_VALUES_PATH
               value: "/lb-values.yaml"
-          {{ end }}
+          {{- end }}
           {{- if .Values.operator.securityContext }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
@@ -91,18 +91,12 @@ spec:
             - name: chart-config
               mountPath: /lb-values.yaml
               subPath: values.yaml
-#            - name: chart-path
-#              mountPath: /chart.tgz
             {{- end }}
             {{- if .Values.operator.events.auth.secretName  }}
             - name: events-creds
               mountPath: /creds
               subPath: "creds"
             {{- end }}
-#            {{- if ne .Values.operator.chart.valuesPath "" }}
-#            - name: chart-values-path
-#              mountPath: {{ .Values.operator.chart.valuesPath }}
-#            {{- end }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}
       {{- with .Values.operator.nodeSelector }}
