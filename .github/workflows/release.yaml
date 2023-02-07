@@ -16,8 +16,8 @@ jobs:
           charts_dir: chart
           charts_url: "https://infratographer.github.io/charts"
           repository: "charts"
-          app_version: ${{  github.ref_name }}"
-          chart_version: ${{  github.ref_name }}"
+          app_version: ${{  github.ref_name }}
+          chart_version: ${{  github.ref_name }}
           branch: gh-pages 
 
   image-build:
