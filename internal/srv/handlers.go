@@ -47,7 +47,7 @@ func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 		return err
 	}
 
-	if err := s.CreateNamespace(lbdata.LoadBalancerID.String()); err != nil {
+	if _, err := s.CreateNamespace(lbdata.LoadBalancerID.String()); err != nil {
 		s.Logger.Errorw("handler unable to create required namespace", "error", err)
 		return err
 	}

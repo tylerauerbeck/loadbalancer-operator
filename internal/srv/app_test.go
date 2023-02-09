@@ -112,12 +112,14 @@ func TestCreateNamespace(t *testing.T) {
 				KubeClient: tcase.kubeclient,
 			}
 
-			err := srv.CreateNamespace(tcase.appNamespace)
+			ns, err := srv.CreateNamespace(tcase.appNamespace)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
+				assert.Nil(t, ns)
 			} else {
 				assert.Nil(t, err)
+				assert.Contains(t, ns.Annotations, "com.infratographer.lb-operator/managed")
 			}
 		})
 	}
@@ -216,7 +218,7 @@ func TestNewDeployment(t *testing.T) {
 				Chart:      tcase.chart,
 			}
 
-			_ = srv.CreateNamespace(tcase.appName)
+			_, _ = srv.CreateNamespace(tcase.appName)
 			err = srv.newDeployment(tcase.appName, nil)
 
 			if tcase.expectError {

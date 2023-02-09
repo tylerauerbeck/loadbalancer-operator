@@ -9,6 +9,7 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	applyv1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -25,13 +26,13 @@ const (
 
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
-func (s *Server) CreateNamespace(groupID string) error {
+func (s *Server) CreateNamespace(groupID string) (*v1.Namespace, error) {
 	s.Logger.Debugf("ensuring namespace %s exists", groupID)
 	kc, err := kubernetes.NewForConfig(s.KubeClient)
 
 	if err != nil {
 		s.Logger.Errorw("unable to authenticate against kubernetes cluster", "error", err)
-		return err
+		return nil, err
 	}
 
 	apSpec := applyv1.NamespaceApplyConfiguration{
@@ -40,24 +41,25 @@ func (s *Server) CreateNamespace(groupID string) error {
 			APIVersion: strPt("v1"),
 		},
 		ObjectMetaApplyConfiguration: &applymetav1.ObjectMetaApplyConfiguration{
-			Name: &groupID,
+			Name:        &groupID,
+			Annotations: map[string]string{"com.infratographer.lb-operator/managed": "true"},
 		},
 		Spec:   &applyv1.NamespaceSpecApplyConfiguration{},
 		Status: &applyv1.NamespaceStatusApplyConfiguration{},
 	}
-	_, err = kc.CoreV1().Namespaces().Apply(s.Context, &apSpec, metav1.ApplyOptions{FieldManager: "loadbalanceroperator"})
+	ns, err := kc.CoreV1().Namespaces().Apply(s.Context, &apSpec, metav1.ApplyOptions{FieldManager: "loadbalanceroperator"})
 
 	if err != nil {
 		s.Logger.Errorw("unable to create namespace", "error", err)
-		return err
+		return nil, err
 	}
 
 	if err := attachRoleBinding(s.Context, kc, groupID); err != nil {
 		s.Logger.Errorw("unable to attach namespace manager rolebinding to namespace", "error", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return ns, nil
 }
 
 func attachRoleBinding(ctx context.Context, client *kubernetes.Clientset, namespace string) error {
