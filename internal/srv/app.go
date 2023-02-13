@@ -24,6 +24,23 @@ const (
 	nameLength = 53
 )
 
+func (s *Server) removeNamespace(ns string) error {
+	s.Logger.Debugw("removing namespace", "namespace", ns)
+	kc, err := kubernetes.NewForConfig(s.KubeClient)
+
+	if err != nil {
+		s.Logger.Errorw("unable to authenticate against kubernetes cluster", "error", err)
+		return err
+	}
+
+	err = kc.CoreV1().Namespaces().Delete(s.Context, ns, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
 func (s *Server) CreateNamespace(groupID string) (*v1.Namespace, error) {
@@ -111,6 +128,37 @@ func (s *Server) newHelmValues(overrides []valueSet) (map[string]interface{}, er
 	}
 
 	return values, nil
+}
+
+func (s *Server) removeDeployment(name string) error {
+	releaseName := fmt.Sprintf("lb-%s", name)
+	if len(releaseName) > nameLength {
+		releaseName = releaseName[0:nameLength]
+	}
+
+	client, err := s.newHelmClient(name)
+	if err != nil {
+		s.Logger.Errorln("unable to initialize helm client: %s", err)
+		return err
+	}
+
+	hc := action.NewUninstall(client)
+	_, err = hc.Run(releaseName)
+
+	if err != nil {
+		s.Logger.Errorw("unable to remove deployment", "error", err)
+		return err
+	}
+
+	s.Logger.Infof("%s removed successfully", releaseName)
+
+	err = s.removeNamespace(name)
+	if err != nil {
+		s.Logger.Errorw("unable to remove namespace", "error", err)
+		return err
+	}
+
+	return nil
 }
 
 // newDeployment deploys a loadBalancer based upon the configuration provided

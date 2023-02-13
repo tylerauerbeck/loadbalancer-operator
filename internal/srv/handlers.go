@@ -34,6 +34,11 @@ func (s *Server) MessageHandler(m *nats.Msg) {
 		if err != nil {
 			s.Logger.Errorw("unable to process update", "error", err.Error())
 		}
+	case events.EVENTDELETE:
+		err := s.deleteMessageHandler(&msg)
+		if err != nil {
+			s.Logger.Errorw("unable to process delete", "error", err.Error())
+		}
 	default:
 		s.Logger.Debug("This is some other set of queues that we don't know about.")
 	}
@@ -69,6 +74,22 @@ func (s *Server) createMessageHandler(m *pubsubx.Message) error {
 
 	if err := s.newDeployment(lbdata.LoadBalancerID.String(), overrides); err != nil {
 		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) deleteMessageHandler(m *pubsubx.Message) error {
+	lbdata := events.LoadBalancerData{}
+
+	if err := s.parseLBData(&m.AdditionalData, &lbdata); err != nil {
+		s.Logger.Errorw("handler unable to parse loadbalancer data", "error", err)
+		return err
+	}
+
+	if err := s.removeDeployment(lbdata.LoadBalancerID.String()); err != nil {
+		s.Logger.Errorw("handler unable to delete loadbalancer", "error", err)
 		return err
 	}
 

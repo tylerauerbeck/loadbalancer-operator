@@ -13,6 +13,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
@@ -101,6 +102,33 @@ func TestCreateNamespace(t *testing.T) {
 			expectError:  true,
 			appNamespace: "DarkwingDuck",
 			kubeclient:   cfg,
+		},
+		{
+			name:         "invalid kubeclient",
+			expectError:  true,
+			appNamespace: "flintlock",
+			kubeclient: &rest.Config{
+				Host:                "localhost:45678",
+				APIPath:             "",
+				ContentConfig:       rest.ContentConfig{},
+				Username:            "",
+				Password:            "",
+				BearerToken:         "",
+				BearerTokenFile:     "",
+				Impersonate:         rest.ImpersonationConfig{},
+				AuthProvider:        &api.AuthProviderConfig{},
+				AuthConfigPersister: nil,
+				ExecProvider:        &api.ExecConfig{},
+				TLSClientConfig:     rest.TLSClientConfig{},
+				UserAgent:           "",
+				DisableCompression:  false,
+				Transport:           nil,
+				QPS:                 0,
+				Burst:               0,
+				RateLimiter:         nil,
+				WarningHandler:      nil,
+				Timeout:             0,
+			},
 		},
 	}
 
@@ -330,5 +358,188 @@ func TestAttachRoleBinding(t *testing.T) {
 				assert.Nil(t, err)
 			}
 		})
+	}
+}
+
+func TestRemoveNamespace(t *testing.T) {
+	type testCase struct {
+		name         string
+		appNamespace string
+		expectError  bool
+		kubeclient   *rest.Config
+	}
+
+	env := envtest.Environment{}
+
+	cfg, err := env.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	testCases := []testCase{
+		{
+			name:         "valid yaml",
+			expectError:  false,
+			appNamespace: "flintlock",
+			kubeclient:   cfg,
+		},
+		{
+			name:         "invalid namespace",
+			expectError:  true,
+			appNamespace: "this-does-not-exist",
+			kubeclient:   cfg,
+		},
+		{
+			name:         "bad kubeclient",
+			expectError:  true,
+			appNamespace: "this-should-fail",
+			kubeclient: &rest.Config{
+				Host:                "localhost:45678",
+				APIPath:             "",
+				ContentConfig:       rest.ContentConfig{},
+				Username:            "",
+				Password:            "",
+				BearerToken:         "",
+				BearerTokenFile:     "",
+				Impersonate:         rest.ImpersonationConfig{},
+				AuthProvider:        &api.AuthProviderConfig{},
+				AuthConfigPersister: nil,
+				ExecProvider:        &api.ExecConfig{},
+				TLSClientConfig:     rest.TLSClientConfig{},
+				UserAgent:           "",
+				DisableCompression:  false,
+				Transport:           nil,
+				QPS:                 0,
+				Burst:               0,
+				RateLimiter:         nil,
+				WarningHandler:      nil,
+				Timeout:             0,
+			},
+		},
+	}
+
+	for _, tcase := range testCases {
+		t.Run(tcase.name, func(t *testing.T) {
+			srv := Server{
+				Context:    context.TODO(),
+				Logger:     zap.NewNop().Sugar(),
+				KubeClient: tcase.kubeclient,
+			}
+
+			if !tcase.expectError {
+				_, err := srv.CreateNamespace(tcase.appNamespace)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			err = srv.removeNamespace(tcase.appNamespace)
+
+			if tcase.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+
+	err = env.Stop()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TestRemoveDeployment(t *testing.T) {
+	type testCase struct {
+		name         string
+		appNamespace string
+		appName      string
+		expectError  bool
+		chart        *chart.Chart
+		kubeClient   *rest.Config
+		valPath      string
+	}
+
+	testDir, err := os.MkdirTemp("", "test-new-deployment")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer os.RemoveAll(testDir)
+
+	chartPath, err := utils.CreateTestChart(testDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ch, err := loader.Load(chartPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	env := envtest.Environment{}
+
+	cfg, err := env.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []testCase{
+		{
+			name:         "valid deployment",
+			expectError:  false,
+			appNamespace: uuid.New().String(),
+			appName:      uuid.New().String(),
+			chart:        ch,
+			valPath:      pwd + "/../../hack/ci/values.yaml",
+			kubeClient:   cfg,
+		},
+		{
+			name:         "invalid deployment",
+			expectError:  true,
+			appNamespace: uuid.New().String(),
+			appName:      uuid.New().String(),
+			chart:        ch,
+			valPath:      pwd + "/../../hack/ci/values.yaml",
+			kubeClient:   cfg,
+		},
+	}
+
+	for _, tcase := range testCases {
+		t.Run(tcase.name, func(t *testing.T) {
+			srv := Server{
+				Context:    context.TODO(),
+				Logger:     zap.NewNop().Sugar(),
+				KubeClient: cfg,
+				ValuesPath: tcase.valPath,
+				Chart:      tcase.chart,
+			}
+
+			if !tcase.expectError {
+				_, _ = srv.CreateNamespace(tcase.appName)
+				err = srv.newDeployment(tcase.appName, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			err = srv.removeDeployment(tcase.appName)
+
+			if tcase.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+
+	err = env.Stop()
+
+	if err != nil {
+		panic(err)
 	}
 }

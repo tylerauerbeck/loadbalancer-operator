@@ -9,6 +9,8 @@ const (
 	EVENTCREATE = "create"
 	// EVENTUPDATE is the event type to handle update events
 	EVENTUPDATE = "update"
+	// EVENTDELETE is the event type to handle delete events
+	EVENTDELETE = "delete"
 )
 
 type LoadBalancerResources struct {
