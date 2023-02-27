@@ -11,7 +11,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.1
-	go.infratographer.com/x v0.0.1
+	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.10.3
 	k8s.io/apimachinery v0.26.0
