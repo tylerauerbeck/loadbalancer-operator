@@ -94,7 +94,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/nats-server/v2 v2.9.9 // indirect
+	github.com/nats-io/nats-server/v2 v2.9.9
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -140,7 +140,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.26.0 // indirect
+	k8s.io/api v0.26.0
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
 	k8s.io/apiserver v0.26.0 // indirect
 	k8s.io/component-base v0.26.0 // indirect
@@ -158,4 +158,8 @@ require (
 
 require sigs.k8s.io/controller-runtime v0.14.0
 
-require github.com/evanphx/json-patch/v5 v5.6.0 // indirect
+require (
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
+	github.com/minio/highwayhash v1.0.2 // indirect
+	github.com/nats-io/jwt/v2 v2.3.0 // indirect
+)

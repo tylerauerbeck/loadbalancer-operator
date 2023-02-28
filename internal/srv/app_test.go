@@ -14,12 +14,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
 )
 
-func TestNewHelmValues(t *testing.T) {
+func (suite *srvTestSuite) TestNewHelmValues() {
 	type testCase struct {
 		name        string
 		valuesPath  string
@@ -29,7 +28,7 @@ func TestNewHelmValues(t *testing.T) {
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	testCases := []testCase{
@@ -59,7 +58,7 @@ func TestNewHelmValues(t *testing.T) {
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Logger:     zap.NewNop().Sugar(),
 				ValuesPath: tcase.valuesPath,
@@ -75,7 +74,7 @@ func TestNewHelmValues(t *testing.T) {
 	}
 }
 
-func TestCreateNamespace(t *testing.T) {
+func (suite *srvTestSuite) TestCreateNamespace() {
 	type testCase struct {
 		name         string
 		appNamespace string
@@ -83,25 +82,18 @@ func TestCreateNamespace(t *testing.T) {
 		kubeclient   *rest.Config
 	}
 
-	env := envtest.Environment{}
-
-	cfg, err := env.Start()
-	if err != nil {
-		panic(err)
-	}
-
 	testCases := []testCase{
 		{
 			name:         "valid yaml",
 			expectError:  false,
 			appNamespace: "flintlock",
-			kubeclient:   cfg,
+			kubeclient:   suite.Kubeconfig,
 		},
 		{
 			name:         "invalid namespace",
 			expectError:  true,
 			appNamespace: "DarkwingDuck",
-			kubeclient:   cfg,
+			kubeclient:   suite.Kubeconfig,
 		},
 		{
 			name:         "invalid kubeclient",
@@ -133,7 +125,7 @@ func TestCreateNamespace(t *testing.T) {
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
@@ -151,14 +143,9 @@ func TestCreateNamespace(t *testing.T) {
 			}
 		})
 	}
-
-	err = env.Stop()
-	if err != nil {
-		panic(err)
-	}
 }
 
-func TestNewDeployment(t *testing.T) {
+func (suite *srvTestSuite) TestNewDeployment() {
 	type testCase struct {
 		name         string
 		appNamespace string
@@ -171,31 +158,24 @@ func TestNewDeployment(t *testing.T) {
 
 	testDir, err := os.MkdirTemp("", "test-new-deployment")
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	defer os.RemoveAll(testDir)
 
 	chartPath, err := utils.CreateTestChart(testDir)
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	ch, err := loader.Load(chartPath)
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	env := envtest.Environment{}
-
-	cfg, err := env.Start()
-	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	testCases := []testCase{
@@ -206,7 +186,7 @@ func TestNewDeployment(t *testing.T) {
 			appName:      uuid.New().String(),
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   cfg,
+			kubeClient:   suite.Kubeconfig,
 		},
 		{
 			name:         "missing values path",
@@ -215,7 +195,7 @@ func TestNewDeployment(t *testing.T) {
 			appName:      uuid.New().String(),
 			chart:        ch,
 			valPath:      "",
-			kubeClient:   cfg,
+			kubeClient:   suite.Kubeconfig,
 		},
 		{
 			name:         "invalid chart",
@@ -232,16 +212,16 @@ func TestNewDeployment(t *testing.T) {
 				Files:     []*chart.File{},
 			},
 			valPath:    pwd + "/../../hack/ci/values.yaml",
-			kubeClient: cfg,
+			kubeClient: suite.Kubeconfig,
 		},
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
-				KubeClient: cfg,
+				KubeClient: tcase.kubeClient,
 				ValuesPath: tcase.valPath,
 				Chart:      tcase.chart,
 			}
@@ -256,15 +236,9 @@ func TestNewDeployment(t *testing.T) {
 			}
 		})
 	}
-
-	err = env.Stop()
-
-	if err != nil {
-		panic(err)
-	}
 }
 
-func TestNewHelmClient(t *testing.T) {
+func (suite *srvTestSuite) TestNewHelmClient() {
 	type testCase struct {
 		name         string
 		appNamespace string
@@ -272,24 +246,17 @@ func TestNewHelmClient(t *testing.T) {
 		expectError  bool
 	}
 
-	env := envtest.Environment{}
-	cfg, err := env.Start()
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	testCases := []testCase{
 		{
 			name:         "valid client",
 			appNamespace: "launchpad",
-			kubeClient:   cfg,
+			kubeClient:   suite.Kubeconfig,
 			expectError:  false,
 		},
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
@@ -307,7 +274,7 @@ func TestNewHelmClient(t *testing.T) {
 	}
 }
 
-func TestAttachRoleBinding(t *testing.T) {
+func (suite *srvTestSuite) TestAttachRoleBinding() {
 	type testCase struct {
 		name       string
 		namespace  string
@@ -315,30 +282,23 @@ func TestAttachRoleBinding(t *testing.T) {
 		expectErr  bool
 	}
 
-	env := envtest.Environment{}
-	cfg, err := env.Start()
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	testCases := []testCase{
 		{
 			name:       "valid rolebinding",
 			namespace:  "default",
-			kubeClient: cfg,
+			kubeClient: suite.Kubeconfig,
 			expectErr:  false,
 		},
 		{
 			name:       "invalid rolebinding",
 			namespace:  "thisThingDoesNotExist",
-			kubeClient: cfg,
+			kubeClient: suite.Kubeconfig,
 			expectErr:  true,
 		},
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
@@ -361,7 +321,7 @@ func TestAttachRoleBinding(t *testing.T) {
 	}
 }
 
-func TestRemoveNamespace(t *testing.T) {
+func (suite *srvTestSuite) TestRemoveNamespace() {
 	type testCase struct {
 		name         string
 		appNamespace string
@@ -369,25 +329,18 @@ func TestRemoveNamespace(t *testing.T) {
 		kubeclient   *rest.Config
 	}
 
-	env := envtest.Environment{}
-
-	cfg, err := env.Start()
-	if err != nil {
-		panic(err)
-	}
-
 	testCases := []testCase{
 		{
 			name:         "valid yaml",
 			expectError:  false,
 			appNamespace: "flintlock",
-			kubeclient:   cfg,
+			kubeclient:   suite.Kubeconfig,
 		},
 		{
 			name:         "invalid namespace",
 			expectError:  true,
 			appNamespace: "this-does-not-exist",
-			kubeclient:   cfg,
+			kubeclient:   suite.Kubeconfig,
 		},
 		{
 			name:         "bad kubeclient",
@@ -419,7 +372,7 @@ func TestRemoveNamespace(t *testing.T) {
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
@@ -433,7 +386,7 @@ func TestRemoveNamespace(t *testing.T) {
 				}
 			}
 
-			err = srv.removeNamespace(tcase.appNamespace)
+			err := srv.removeNamespace(tcase.appNamespace)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -442,14 +395,9 @@ func TestRemoveNamespace(t *testing.T) {
 			}
 		})
 	}
-
-	err = env.Stop()
-	if err != nil {
-		panic(err)
-	}
 }
 
-func TestRemoveDeployment(t *testing.T) {
+func (suite *srvTestSuite) TestRemoveDeployment() {
 	type testCase struct {
 		name         string
 		appNamespace string
@@ -462,31 +410,24 @@ func TestRemoveDeployment(t *testing.T) {
 
 	testDir, err := os.MkdirTemp("", "test-new-deployment")
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	defer os.RemoveAll(testDir)
 
 	chartPath, err := utils.CreateTestChart(testDir)
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	ch, err := loader.Load(chartPath)
 	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	env := envtest.Environment{}
-
-	cfg, err := env.Start()
-	if err != nil {
-		t.Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	testCases := []testCase{
@@ -497,7 +438,7 @@ func TestRemoveDeployment(t *testing.T) {
 			appName:      uuid.New().String(),
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   cfg,
+			kubeClient:   suite.Kubeconfig,
 		},
 		{
 			name:         "invalid deployment",
@@ -506,16 +447,16 @@ func TestRemoveDeployment(t *testing.T) {
 			appName:      uuid.New().String(),
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   cfg,
+			kubeClient:   suite.Kubeconfig,
 		},
 	}
 
 	for _, tcase := range testCases {
-		t.Run(tcase.name, func(t *testing.T) {
+		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
-				KubeClient: cfg,
+				KubeClient: suite.Kubeconfig,
 				ValuesPath: tcase.valPath,
 				Chart:      tcase.chart,
 			}
@@ -535,11 +476,5 @@ func TestRemoveDeployment(t *testing.T) {
 				assert.Nil(t, err)
 			}
 		})
-	}
-
-	err = env.Stop()
-
-	if err != nil {
-		panic(err)
 	}
 }

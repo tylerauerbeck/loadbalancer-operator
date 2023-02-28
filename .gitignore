@@ -1,6 +1,5 @@
 loadbalanceroperator
 kubeconfig
-config
 *.tgz
 *.out
 bin
