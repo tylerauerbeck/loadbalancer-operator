@@ -6,7 +6,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/nats-io/nats.go v1.23.0
+	github.com/nats-io/nats.go v1.24.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
