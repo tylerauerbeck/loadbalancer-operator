@@ -14,9 +14,9 @@ require (
 	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.11.1
-	k8s.io/apimachinery v0.26.1
-	k8s.io/cli-runtime v0.26.0
-	k8s.io/client-go v0.26.1
+	k8s.io/apimachinery v0.26.2
+	k8s.io/cli-runtime v0.26.2
+	k8s.io/client-go v0.26.2
 	k8s.io/helm v2.17.0+incompatible
 )
 
@@ -125,12 +125,12 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.3.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
@@ -140,7 +140,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.26.1
+	k8s.io/api v0.26.2
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/apiserver v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
