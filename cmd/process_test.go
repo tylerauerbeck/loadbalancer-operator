@@ -163,8 +163,6 @@ func (suite *cmdTestSuite) TestValidateFlags() {
 }
 
 func (suite *cmdTestSuite) TestNewJetStreamConnection() {
-	suite.T().Parallel()
-
 	type testCase struct {
 		name        string
 		natsURL     string

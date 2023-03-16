@@ -32,6 +32,8 @@ import (
 	"github.com/spf13/viper"
 
 	"go.infratographer.com/loadbalanceroperator/internal/srv"
+	"go.infratographer.com/x/ginx"
+	"go.infratographer.com/x/versionx"
 )
 
 // processCmd represents the base command when called without any subcommands
@@ -63,10 +65,6 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		return err
 	}
 
-	if err := validateFlags(); err != nil {
-		return err
-	}
-
 	chart, err := loadHelmChart(viper.GetString("chart-path"))
 	if err != nil {
 		logger.Fatalw("failed to load helm chart from provided path", "error", err)
@@ -74,9 +72,20 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		return err
 	}
 
+	cfg, err := zap.NewProductionConfig().Build()
+	if viper.GetBool("logging.debug") {
+		cfg, err = zap.NewDevelopmentConfig().Build()
+	}
+
+	if err != nil {
+		logger.Errorw("failed to create healthcheck logger", "error", err)
+		return err
+	}
+
 	cx, cancel := context.WithCancel(ctx)
 
 	server := &srv.Server{
+		Gin:             ginx.NewServer(cfg, ginx.Config{Listen: viper.GetString("healthcheck-port")}, versionx.BuildDetails()),
 		Chart:           chart,
 		Context:         cx,
 		Debug:           viper.GetBool("logging.debug"),
@@ -84,6 +93,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		KubeClient:      client,
 		Logger:          logger,
 		Prefix:          viper.GetString("nats.subject-prefix"),
+		Subjects:        viper.GetStringSlice("nats.subjects"),
 		StreamName:      viper.GetString("nats.stream-name"),
 		ValuesPath:      viper.GetString("chart-values-path"),
 	}

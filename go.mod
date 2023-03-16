@@ -157,7 +157,22 @@ require sigs.k8s.io/controller-runtime v0.14.4
 
 require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
+	github.com/gin-contrib/requestid v0.0.6 // indirect
+	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/gin-contrib/zap v0.1.0 // indirect
+	github.com/gin-gonic/gin v1.8.1 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/go-playground/validator/v10 v10.11.1 // indirect
+	github.com/goccy/go-json v0.10.0 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/nats-io/jwt/v2 v2.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/ugorji/go/codec v1.2.7 // indirect
+	github.com/zsais/go-gin-prometheus v0.1.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.37.0 // indirect
+	go.opentelemetry.io/otel v1.11.2 // indirect
+	go.opentelemetry.io/otel/trace v1.11.2 // indirect
 )

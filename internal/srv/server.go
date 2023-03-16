@@ -2,10 +2,12 @@ package srv
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/nats-io/nats.go"
-	"github.com/spf13/viper"
+	"go.infratographer.com/x/ginx"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
@@ -13,6 +15,7 @@ import (
 
 // Server holds options for server connectivity and settings
 type Server struct {
+	Gin             ginx.Server
 	Context         context.Context
 	StreamName      string
 	Logger          *zap.SugaredLogger
@@ -20,6 +23,8 @@ type Server struct {
 	JetstreamClient nats.JetStreamContext
 	Debug           bool
 	Prefix          string
+	Subjects        []string
+	Subscriptions   []*nats.Subscription
 	Chart           *chart.Chart
 	ChartPath       string
 	ValuesPath      string
@@ -27,14 +32,33 @@ type Server struct {
 
 // Run will start the server queue connections and healthcheck endpoints
 func (s *Server) Run(ctx context.Context) error {
-	subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.>", s.Prefix), "loadbalanceroperator-workers", s.MessageHandler, nats.BindStream(s.StreamName))
-	if err != nil {
-		s.Logger.Errorf("unable to subscribe to queue: %s", err)
+	if err := s.configureSubscribers(); err != nil {
+		s.Logger.Errorw("unable to configure subscribers", "error", err)
 		return err
 	}
 
-	if err := s.ExposeEndpoint(subscription, viper.GetString("healthcheck-port")); err != nil {
-		return err
+	if err := s.configureHealthcheck(); err != nil {
+		s.Logger.Errorw("unable to configure healthcheck", "error", err)
+	}
+
+	go func() {
+		s.Gin.Run()
+	}()
+
+	return nil
+}
+
+func (s *Server) configureSubscribers() error {
+	for _, subject := range s.Subjects {
+		hash := md5.Sum([]byte(subject))
+
+		subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.%s", s.Prefix, subject), "loadbalanceroperator-workers"+hex.EncodeToString(hash[:]), s.MessageHandler, nats.BindStream(s.StreamName))
+		if err != nil {
+			s.Logger.Errorw("unable to subscribe to queue", "queue", subject, "error", err)
+			return err
+		}
+
+		s.Subscriptions = append(s.Subscriptions, subscription)
 	}
 
 	return nil
