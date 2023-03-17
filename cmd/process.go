@@ -27,13 +27,12 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"go.infratographer.com/loadbalanceroperator/internal/srv"
-	"go.infratographer.com/x/ginx"
-	"go.infratographer.com/x/versionx"
 )
 
 // processCmd represents the base command when called without any subcommands
@@ -72,20 +71,10 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		return err
 	}
 
-	cfg, err := zap.NewProductionConfig().Build()
-	if viper.GetBool("logging.debug") {
-		cfg, err = zap.NewDevelopmentConfig().Build()
-	}
-
-	if err != nil {
-		logger.Errorw("failed to create healthcheck logger", "error", err)
-		return err
-	}
-
 	cx, cancel := context.WithCancel(ctx)
 
 	server := &srv.Server{
-		Gin:             ginx.NewServer(cfg, ginx.Config{Listen: viper.GetString("healthcheck-port")}, versionx.BuildDetails()),
+		Gin:             gin.Default(),
 		Chart:           chart,
 		Context:         cx,
 		Debug:           viper.GetBool("logging.debug"),

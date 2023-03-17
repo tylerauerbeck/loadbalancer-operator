@@ -6,8 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
-	"go.infratographer.com/x/ginx"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
@@ -15,7 +16,7 @@ import (
 
 // Server holds options for server connectivity and settings
 type Server struct {
-	Gin             ginx.Server
+	Gin             *gin.Engine
 	Context         context.Context
 	StreamName      string
 	Logger          *zap.SugaredLogger
@@ -37,12 +38,12 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := s.configureHealthcheck(); err != nil {
-		s.Logger.Errorw("unable to configure healthcheck", "error", err)
-	}
+	s.configureHealthcheck()
 
 	go func() {
-		s.Gin.Run()
+		if err := s.Gin.Run(viper.GetString("healthcheck-port")); err != nil {
+			s.Logger.Errorw("unable to start healthcheck server", "error", err)
+		}
 	}()
 
 	return nil
