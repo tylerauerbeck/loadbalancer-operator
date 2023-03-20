@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
 	"go.uber.org/zap"
@@ -103,7 +102,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 				JetstreamClient: js,
 				Logger:          zap.NewNop().Sugar(),
 			},
-			hcport:      ":8900",
+			// hcport:      ":8900",
 			expectError: false,
 		},
 		{
@@ -117,7 +116,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 				JetstreamClient: js,
 				Logger:          zap.NewNop().Sugar(),
 			},
-			hcport:      ":8901",
+			// hcport:      ":8901",
 			expectError: true,
 		},
 		// {
@@ -139,9 +138,9 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 		suite.T().Run(tc.name, func(t *testing.T) {
 			err := tc.s.Run(tc.s.Context)
 
-			// if tc.hcport != "" {
-			viper.Set("healthcheck.port", tc.hcport)
-			// }
+			// // if tc.hcport != "" {
+			// viper.Set("healthcheck.port", tc.hcport)
+			// // }
 
 			if tc.expectError {
 				assert.Error(t, err)
