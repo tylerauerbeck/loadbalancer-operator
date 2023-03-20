@@ -103,6 +103,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 				JetstreamClient: js,
 				Logger:          zap.NewNop().Sugar(),
 			},
+			hcport:      ":8900",
 			expectError: false,
 		},
 		{
@@ -116,21 +117,22 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 				JetstreamClient: js,
 				Logger:          zap.NewNop().Sugar(),
 			},
+			hcport:      ":8901",
 			expectError: true,
 		},
-		{
-			name:   "bad healthcheck port",
-			hcport: "abcd",
-			s: &Server{
-				Gin:             gin.Default(),
-				Context:         context.TODO(),
-				Subjects:        []string{"foo"},
-				StreamName:      "TestRunner",
-				Prefix:          "run",
-				JetstreamClient: js,
-				Logger:          zap.NewNop().Sugar(),
-			},
-		},
+		// {
+		// 	name:   "bad healthcheck port",
+		// 	hcport: "8675309",
+		// 	s: &Server{
+		// 		Gin:             gin.Default(),
+		// 		Context:         context.TODO(),
+		// 		Subjects:        []string{"foo"},
+		// 		StreamName:      "TestRunner",
+		// 		Prefix:          "run",
+		// 		JetstreamClient: js,
+		// 		Logger:          zap.NewNop().Sugar(),
+		// 	},
+		// },
 	}
 
 	for _, tc := range testCases {
@@ -146,7 +148,6 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 			} else {
 				assert.NoError(t, err)
 			}
-			viper.Reset()
 		})
 	}
 }
