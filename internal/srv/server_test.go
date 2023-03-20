@@ -77,7 +77,6 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 	type testCase struct {
 		name        string
 		s           *Server
-		hcport      string
 		expectError bool
 	}
 
