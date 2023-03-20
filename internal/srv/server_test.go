@@ -139,9 +139,9 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 		suite.T().Run(tc.name, func(t *testing.T) {
 			err := tc.s.Run(tc.s.Context)
 
-			if tc.hcport != "" {
-				viper.Set("healthcheck.port", tc.hcport)
-			}
+			// if tc.hcport != "" {
+			viper.Set("healthcheck.port", tc.hcport)
+			// }
 
 			if tc.expectError {
 				assert.Error(t, err)
