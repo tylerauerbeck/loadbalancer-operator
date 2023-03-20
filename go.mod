@@ -14,9 +14,9 @@ require (
 	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.11.2
-	k8s.io/apimachinery v0.26.2
-	k8s.io/cli-runtime v0.26.2
-	k8s.io/client-go v0.26.2
+	k8s.io/apimachinery v0.26.3
+	k8s.io/cli-runtime v0.26.3
+	k8s.io/client-go v0.26.3
 	k8s.io/helm v2.17.0+incompatible
 )
 
@@ -137,7 +137,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.26.2
+	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/apiserver v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
