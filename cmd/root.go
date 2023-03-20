@@ -68,6 +68,9 @@ func init() {
 	rootCmd.PersistentFlags().String("nats-subject-prefix", "", "prefix for NATS subjects")
 	viperBindFlag("nats.subject-prefix", rootCmd.PersistentFlags().Lookup("nats-subject-prefix"))
 
+	rootCmd.PersistentFlags().StringSlice("nats-subjects", nil, "NATS subjects to subscribe to")
+	viperBindFlag("nats.subjects", rootCmd.PersistentFlags().Lookup("nats-subjects"))
+
 	rootCmd.PersistentFlags().String("nats-stream-name", "loadbalanceroperator", "prefix for NATS subjects")
 	viperBindFlag("nats.stream-name", rootCmd.PersistentFlags().Lookup("nats-stream-name"))
 

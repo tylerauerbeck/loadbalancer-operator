@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -63,10 +64,6 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		return err
 	}
 
-	if err := validateFlags(); err != nil {
-		return err
-	}
-
 	chart, err := loadHelmChart(viper.GetString("chart-path"))
 	if err != nil {
 		logger.Fatalw("failed to load helm chart from provided path", "error", err)
@@ -77,6 +74,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	cx, cancel := context.WithCancel(ctx)
 
 	server := &srv.Server{
+		Gin:             gin.Default(),
 		Chart:           chart,
 		Context:         cx,
 		Debug:           viper.GetBool("logging.debug"),
@@ -84,6 +82,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		KubeClient:      client,
 		Logger:          logger,
 		Prefix:          viper.GetString("nats.subject-prefix"),
+		Subjects:        viper.GetStringSlice("nats.subjects"),
 		StreamName:      viper.GetString("nats.stream-name"),
 		ValuesPath:      viper.GetString("chart-values-path"),
 	}

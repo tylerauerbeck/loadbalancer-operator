@@ -11,6 +11,7 @@ import (
 func TestSrvTestSuite(t *testing.T) {
 	st := new(srvTestSuite)
 	suite.Run(t, st)
+	st.TearDownAllSuite()
 }
 
 type srvTestSuite struct {

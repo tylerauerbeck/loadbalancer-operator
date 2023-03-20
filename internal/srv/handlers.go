@@ -2,7 +2,6 @@ package srv
 
 import (
 	"encoding/json"
-	"net/http"
 
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/viper"
@@ -102,39 +101,6 @@ func (s *Server) deleteMessageHandler(m *pubsubx.Message) error {
 }
 
 func (s *Server) updateMessageHandler(m *pubsubx.Message) error {
-	return nil
-}
-
-// ExposeEndpoint exposes a specified port for various checks
-func (s *Server) ExposeEndpoint(subscription *nats.Subscription, port string) error {
-	if port == "" {
-		return ErrPortsRequired
-	}
-
-	go func() {
-		s.Logger.Infof("Starting endpoints on %s", port)
-
-		checkConfig := http.NewServeMux()
-		checkConfig.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-			_, _ = w.Write([]byte("ok"))
-		})
-		checkConfig.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
-			if !subscription.IsValid() {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte("500 - Queue subscription is inactive"))
-			} else {
-				_, _ = w.Write([]byte("ok"))
-			}
-		})
-
-		checks := http.Server{
-			Handler: checkConfig,
-			Addr:    port,
-		}
-
-		_ = checks.ListenAndServe()
-	}()
-
 	return nil
 }
 

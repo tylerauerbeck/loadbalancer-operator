@@ -11,6 +11,7 @@ import (
 func TestCmdTestSuite(t *testing.T) {
 	st := new(cmdTestSuite)
 	suite.Run(t, st)
+	st.TearDownAllSuite()
 }
 
 type cmdTestSuite struct {
