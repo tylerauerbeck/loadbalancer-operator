@@ -46,6 +46,8 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 	}()
 
+	s.Logger.Infow("starting server")
+
 	return nil
 }
 
@@ -53,7 +55,7 @@ func (s *Server) configureSubscribers() error {
 	for _, subject := range s.Subjects {
 		hash := md5.Sum([]byte(subject))
 
-		subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.%s", s.Prefix, subject), "loadbalanceroperator-workers"+hex.EncodeToString(hash[:]), s.MessageHandler, nats.BindStream(s.StreamName))
+		subscription, err := s.JetstreamClient.QueueSubscribe(fmt.Sprintf("%s.%s", s.Prefix, subject), "loadbalanceroperator-workers"+hex.EncodeToString(hash[:]), s.messageRouter, nats.BindStream(s.StreamName))
 		if err != nil {
 			s.Logger.Errorw("unable to subscribe to queue", "queue", subject, "error", err)
 			return err

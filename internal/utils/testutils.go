@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/client-go/rest"
@@ -69,4 +70,28 @@ func (suite *OperatorTestSuite) TearDownAllSuite() {
 	if stop != nil {
 		panic(stop)
 	}
+}
+
+func CreateWorkspace(dir string) (string, string, *chart.Chart, string) {
+	d, err := os.MkdirTemp("", dir)
+	if err != nil {
+		panic(err)
+	}
+
+	chartPath, err := CreateTestChart(d)
+	if err != nil {
+		panic(err)
+	}
+
+	ch, err := loader.Load(chartPath)
+	if err != nil {
+		panic(err)
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	return d, chartPath, ch, pwd
 }
