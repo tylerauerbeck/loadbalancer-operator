@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -103,7 +102,6 @@ func (suite srvTestSuite) TestMessageRouter() { //nolint:govet
 	defer os.RemoveAll(dir)
 
 	srv := Server{
-		Gin:             gin.Default(),
 		Context:         context.TODO(),
 		StreamName:      "TestMessageRouter",
 		Logger:          zap.NewNop().Sugar(),

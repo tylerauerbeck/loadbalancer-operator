@@ -22,7 +22,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -97,12 +96,6 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.AddCommand(processCmd)
-
-	if viper.GetBool("logging.debug") {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
 }
 
 // initConfig reads in config file and ENV variables if set.

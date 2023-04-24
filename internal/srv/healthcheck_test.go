@@ -5,29 +5,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"go.infratographer.com/x/echox"
+
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
 )
 
-func (suite srvTestSuite) TestLivezHandler() { //nolint:govet
-	s := &Server{
-		Gin: gin.Default(),
-	}
-
-	s.configureHealthcheck()
-
-	req := httptest.NewRequest("GET", "/livez", nil)
-	rec := httptest.NewRecorder()
-	s.Gin.ServeHTTP(rec, req)
-
-	assert.Equal(suite.T(), 200, rec.Code)
-}
-
-func (suite srvTestSuite) TestHealthzHandler() { //nolint:govet
+func (suite srvTestSuite) TestNatsHealthcheck() { //nolint:govet
 	type testCase struct {
 		name        string
 		subjects    []string
@@ -64,7 +51,7 @@ func (suite srvTestSuite) TestHealthzHandler() { //nolint:govet
 		suite.T().Run(tc.name, func(t *testing.T) {
 			s := &Server{
 				JetstreamClient: js,
-				Gin:             gin.Default(),
+				Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 				Subjects:        tc.subjects,
 				Prefix:          "test",
 				StreamName:      "TestHealthcheck",
@@ -78,12 +65,13 @@ func (suite srvTestSuite) TestHealthzHandler() { //nolint:govet
 				_ = s.Subscriptions[0].Unsubscribe()
 			}
 
-			req := httptest.NewRequest("GET", "/healthz", nil)
+			req := httptest.NewRequest("GET", "/readyz", nil)
 			rec := httptest.NewRecorder()
-			s.Gin.ServeHTTP(rec, req)
+
+			s.Echo.Handler().ServeHTTP(rec, req)
 
 			if tc.expectError {
-				assert.Equal(suite.T(), http.StatusInternalServerError, rec.Code)
+				assert.Equal(suite.T(), http.StatusServiceUnavailable, rec.Code)
 			} else {
 				assert.Equal(suite.T(), http.StatusOK, rec.Code)
 			}
@@ -93,14 +81,14 @@ func (suite srvTestSuite) TestHealthzHandler() { //nolint:govet
 
 func (suite srvTestSuite) TestVersionHandler() { // nolint:govet
 	s := &Server{
-		Gin: gin.Default(),
+		Echo: echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 	}
 
-	s.configureHealthcheck()
+	s.Echo.AddHandler(s)
 
 	req := httptest.NewRequest("GET", "/version", nil)
 	rec := httptest.NewRecorder()
-	s.Gin.ServeHTTP(rec, req)
+	s.Echo.Handler().ServeHTTP(rec, req)
 
-	assert.Equal(suite.T(), 200, rec.Code)
+	assert.Equal(suite.T(), http.StatusOK, rec.Code)
 }

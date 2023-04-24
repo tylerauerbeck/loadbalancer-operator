@@ -8,7 +8,7 @@ steps:
     key: "lint"
     plugins:
       - docker#v5.6.0:
-          image: "registry.hub.docker.com/golangci/golangci-lint:v1.50"
+          image: "registry.hub.docker.com/golangci/golangci-lint:v1.51"
           command: ["golangci-lint", "run", "-v", "--timeout", "3m0s"]
 
   - label: ":test_tube: test"
@@ -23,7 +23,7 @@ steps:
       KUBEBUILDER_ASSETS="$$(setup-envtest use $${ENVTEST_K8S_VERSION} --bin-dir $(PWD)/bin -p path)" go test -cover -race ./...
     plugins:
       - docker#v5.6.0:
-          image: "golang:1.19"
+          image: "golang:1.20"
           # command: ["go", "test", "-cover" ,"-race", "./..."]
 
   - label: ":golang: build"
@@ -31,11 +31,11 @@ steps:
     artifact_paths: "bin/${APP_NAME}"
     plugins:
       - docker#v5.6.0:
-          image: "golang:1.19.4"
+          image: "golang:1.20"
           environment:
             - CGO_ENABLED=0
             - GOOS=linux
-          command: ["go", "build", "-mod=mod", "-a", "-o", "bin/$APP_NAME"]
+          command: ["go", "build", "-buildvcs=false", "-mod=mod", "-a", "-o", "bin/$APP_NAME"]
 
   - label: ":docker: docker build and publish"
     key: "build"

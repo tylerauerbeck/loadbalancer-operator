@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 
 	"go.uber.org/zap"
+
+	"go.infratographer.com/x/echox"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
 )
@@ -93,7 +94,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 		{
 			name: "valid run",
 			s: &Server{
-				Gin:             gin.Default(),
+				Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 				Context:         context.TODO(),
 				Subjects:        []string{"foo"},
 				StreamName:      "TestRunner",
@@ -107,7 +108,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 		{
 			name: "bad subject",
 			s: &Server{
-				Gin:             gin.Default(),
+				Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 				Context:         context.TODO(),
 				Subjects:        []string{"foo", "bar", "baz"},
 				StreamName:      "TestRunner",
@@ -122,7 +123,7 @@ func (suite srvTestSuite) TestRun() { //nolint:govet
 		// 	name:   "bad healthcheck port",
 		// 	hcport: "8675309",
 		// 	s: &Server{
-		// 		Gin:             gin.Default(),
+		// 		Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 		// 		Context:         context.TODO(),
 		// 		Subjects:        []string{"foo"},
 		// 		StreamName:      "TestRunner",

@@ -1,40 +1,33 @@
 package srv
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) healthzHandler(c *gin.Context) {
+func (s *Server) natsHealthcheck(ctx context.Context) error {
 	for _, s := range s.Subscriptions {
 		if !s.IsValid() {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status": fmt.Sprintf("Subscription %s is unavailable", s.Subject),
-			})
+			return fmt.Errorf("subscription %s is unavailable", s.Subject) //nolint:goerr113 // allowing for healthcheck
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": "all subscriptions available",
-	})
+	return nil
 }
 
-func (s *Server) livezHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
-	})
-}
-
-func (s *Server) versionHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+func (s *Server) versionHandler(c echo.Context) error {
+	return c.JSON(http.StatusOK, echo.Map{
 		"version": "0.0.1",
 	})
 }
 
 func (s *Server) configureHealthcheck() {
-	s.Gin.GET("/healthz", s.healthzHandler)
-	s.Gin.GET("/livez", s.livezHandler)
-	s.Gin.GET("/version", s.versionHandler)
+	s.Echo.AddReadinessCheck("nats", s.natsHealthcheck)
+}
+
+func (s *Server) Routes(g *echo.Group) {
+	g.GET("/version", s.versionHandler)
 }

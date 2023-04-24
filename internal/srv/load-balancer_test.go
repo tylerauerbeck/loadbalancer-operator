@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
+	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/pubsubx"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
@@ -37,7 +37,7 @@ func (suite srvTestSuite) TestProcessLoadBalancer() { //nolint:govet
 	defer os.RemoveAll(dir)
 
 	srv := Server{
-		Gin:             gin.Default(),
+		Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 		Context:         context.TODO(),
 		StreamName:      "TestProcessLB",
 		Logger:          zap.NewNop().Sugar(),
@@ -146,7 +146,7 @@ func (suite srvTestSuite) TestProcessLoadBalancerCreate() { //nolint:govet
 	defer os.RemoveAll(dir)
 
 	srv := Server{
-		Gin:             gin.Default(),
+		Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 		Context:         context.TODO(),
 		StreamName:      "TestCreateLB",
 		Logger:          zap.NewNop().Sugar(),
@@ -249,7 +249,7 @@ func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 	defer os.RemoveAll(dir)
 
 	srv := Server{
-		Gin:        gin.Default(),
+		Echo:       echox.NewServer(zap.NewNop(), echox.Config{}, nil),
 		Context:    context.TODO(),
 		StreamName: "TestDeleteLB",
 		Logger:     zap.NewNop().Sugar(),

@@ -27,10 +27,12 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"go.infratographer.com/x/echox"
+	"go.infratographer.com/x/versionx"
 
 	"go.infratographer.com/loadbalanceroperator/internal/srv"
 )
@@ -73,8 +75,17 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 
 	cx, cancel := context.WithCancel(ctx)
 
+	eSrv := echox.NewServer(
+		logger.Desugar(),
+		echox.Config{
+			Listen:              viper.GetString("server.listen"),
+			ShutdownGracePeriod: viper.GetDuration("server.shutdown-grace-period"),
+		},
+		versionx.BuildDetails(),
+	)
+
 	server := &srv.Server{
-		Gin:             gin.Default(),
+		Echo:            eSrv,
 		Chart:           chart,
 		Context:         cx,
 		Debug:           viper.GetBool("logging.debug"),
