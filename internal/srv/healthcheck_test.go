@@ -7,6 +7,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"go.infratographer.com/x/echox"
@@ -49,9 +50,13 @@ func (suite srvTestSuite) TestNatsHealthcheck() { //nolint:govet
 
 	for _, tc := range testCases {
 		suite.T().Run(tc.name, func(t *testing.T) {
+			srv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+			require.NoError(t, err, "unexpected error creating new server")
+
 			s := &Server{
 				JetstreamClient: js,
-				Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
+				Echo:            srv,
 				Subjects:        tc.subjects,
 				Prefix:          "test",
 				StreamName:      "TestHealthcheck",
@@ -80,8 +85,12 @@ func (suite srvTestSuite) TestNatsHealthcheck() { //nolint:govet
 }
 
 func (suite srvTestSuite) TestVersionHandler() { // nolint:govet
+	srv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	require.NoError(suite.T(), err, "unexpected error creating new server")
+
 	s := &Server{
-		Echo: echox.NewServer(zap.NewNop(), echox.Config{}, nil),
+		Echo: srv,
 	}
 
 	s.Echo.AddHandler(s)

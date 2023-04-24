@@ -75,14 +75,14 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 
 	cx, cancel := context.WithCancel(ctx)
 
-	eSrv := echox.NewServer(
+	eSrv, err := echox.NewServer(
 		logger.Desugar(),
-		echox.Config{
-			Listen:              viper.GetString("server.listen"),
-			ShutdownGracePeriod: viper.GetDuration("server.shutdown-grace-period"),
-		},
+		echox.ConfigFromViper(viper.GetViper()),
 		versionx.BuildDetails(),
 	)
+	if err != nil {
+		logger.Fatal("failed to initialize new server", zap.Error(err))
+	}
 
 	server := &srv.Server{
 		Echo:            eSrv,

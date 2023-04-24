@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/pubsubx"
 	"go.uber.org/zap"
@@ -36,8 +37,12 @@ func (suite srvTestSuite) TestProcessLoadBalancer() { //nolint:govet
 	dir, cp, ch, pwd := utils.CreateWorkspace("test-process-lb")
 	defer os.RemoveAll(dir)
 
+	eSrv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	require.NoError(suite.T(), err, "unexpected error creating new server")
+
 	srv := Server{
-		Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
+		Echo:            eSrv,
 		Context:         context.TODO(),
 		StreamName:      "TestProcessLB",
 		Logger:          zap.NewNop().Sugar(),
@@ -145,8 +150,12 @@ func (suite srvTestSuite) TestProcessLoadBalancerCreate() { //nolint:govet
 	dir, cp, ch, pwd := utils.CreateWorkspace("test-create-lb")
 	defer os.RemoveAll(dir)
 
+	eSrv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	require.NoError(suite.T(), err, "unexpected error creating new server")
+
 	srv := Server{
-		Echo:            echox.NewServer(zap.NewNop(), echox.Config{}, nil),
+		Echo:            eSrv,
 		Context:         context.TODO(),
 		StreamName:      "TestCreateLB",
 		Logger:          zap.NewNop().Sugar(),
@@ -248,8 +257,12 @@ func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 	dir, cp, ch, pwd := utils.CreateWorkspace("test-delete-lb")
 	defer os.RemoveAll(dir)
 
+	eSrv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	require.NoError(suite.T(), err, "unexpected error creating new server")
+
 	srv := Server{
-		Echo:       echox.NewServer(zap.NewNop(), echox.Config{}, nil),
+		Echo:       eSrv,
 		Context:    context.TODO(),
 		StreamName: "TestDeleteLB",
 		Logger:     zap.NewNop().Sugar(),
