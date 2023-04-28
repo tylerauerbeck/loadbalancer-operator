@@ -11,7 +11,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
-	go.infratographer.com/x v0.0.7
+	go.infratographer.com/x v0.0.8
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.11.3
 	k8s.io/apimachinery v0.27.1
@@ -74,7 +74,7 @@ require (
 	github.com/klauspost/compress v1.16.4 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
-	github.com/lib/pq v1.10.8 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -160,13 +160,16 @@ require (
 
 require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
+	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/brpaz/echozap v1.1.3 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/labstack/echo-contrib v0.14.1 // indirect
+	github.com/labstack/echo-jwt/v4 v4.1.0 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/nats-io/jwt/v2 v2.4.1 // indirect
@@ -176,4 +179,5 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )
