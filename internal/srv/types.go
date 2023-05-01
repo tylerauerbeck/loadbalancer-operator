@@ -5,7 +5,8 @@ import "errors"
 const (
 
 	// Event types
-	loadbalancer = "load-balancer"
+	loadbalancer     = "load-balancer"
+	loadbalancerport = "load-balancer-port"
 	// pools        = "pools"
 	// ports        = "ports"
 

@@ -36,6 +36,10 @@ func (s *Server) messageRouter(m *nats.Msg) {
 		if err := s.processLoadBalancer(msg); err != nil {
 			s.Logger.Errorw("Unable to process load balancer", "error", err)
 		}
+	case loadbalancerport:
+		if err := s.processLoadBalancerPort(msg); err != nil {
+			s.Logger.Errorw("Unable to process load balancer port", "error", err)
+		}
 	default:
 		s.Logger.Errorw("Unknown resource type: %s", "resource_type", actor.ResourceType)
 	}

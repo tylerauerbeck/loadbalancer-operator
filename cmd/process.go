@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/versionx"
 
@@ -84,7 +85,10 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		logger.Fatal("failed to initialize new server", zap.Error(err))
 	}
 
+	cli := lbapi.NewClient(viper.GetString("api-endpoint"))
+
 	server := &srv.Server{
+		APIClient:       cli,
 		Echo:            eSrv,
 		Chart:           chart,
 		Context:         cx,

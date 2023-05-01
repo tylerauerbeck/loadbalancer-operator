@@ -11,10 +11,13 @@ import (
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
+
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 )
 
 // Server holds options for server connectivity and settings
 type Server struct {
+	APIClient       *lbapi.Client
 	Echo            *echox.Server
 	Context         context.Context
 	StreamName      string

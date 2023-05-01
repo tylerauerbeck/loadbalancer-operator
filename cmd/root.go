@@ -92,6 +92,9 @@ func init() {
 	rootCmd.PersistentFlags().StringSlice("helm-memory-flag", nil, "flag to set memory limit for helm chart")
 	viperBindFlag("helm-memory-flag", rootCmd.PersistentFlags().Lookup("helm-memory-flag"))
 
+	rootCmd.PersistentFlags().String("api-endpoint", "", "endpoint for the loadbalancer api")
+	viperBindFlag("api-endpoint", rootCmd.PersistentFlags().Lookup("api-endpoint"))
+
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
