@@ -31,14 +31,13 @@ func (s *Server) processLoadBalancerPort(msg pubsubx.Message) error {
 }
 
 func (s *Server) processLoadBalancerPortCreate(msg pubsubx.Message) error {
-	// lbdata := events.LoadBalancerData{}
-	urn, err := urnx.Parse(msg.SubjectURN)
+	lbid, err := s.getAssocLBUUID(msg.AdditionalSubjectURNs)
 	if err != nil {
-		s.Logger.Errorw("unable to parse load-balancer URN", "error", err)
+		s.Logger.Errorw("unable to find associated load balancer in message", "error", err, "associated_urns", msg.AdditionalSubjectURNs)
 		return err
 	}
 
-	lb, err := s.APIClient.GetLoadBalancer(context.TODO(), urn.ResourceID.String())
+	lb, err := s.APIClient.GetLoadBalancer(context.TODO(), lbid.String())
 
 	if err != nil {
 		s.Logger.Errorw("unable to get load balancer", "error", err)
