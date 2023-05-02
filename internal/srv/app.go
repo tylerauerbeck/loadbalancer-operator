@@ -196,6 +196,38 @@ func (s *Server) newDeployment(name string, overrides []valueSet) error {
 	return nil
 }
 
+func (s *Server) updateDeployment(name string, helmvals map[string]interface{}) error {
+	releaseName := fmt.Sprintf("lb-%s", name)
+	if len(releaseName) > nameLength {
+		releaseName = releaseName[0:nameLength]
+	}
+
+	// values, err := s.newHelmValues(nil)
+	// if err != nil {
+	// 	s.Logger.Errorw("unable to prepare chart values", "error", err)
+	// 	return err
+	// }
+
+	client, err := s.newHelmClient(name)
+	if err != nil {
+		s.Logger.Errorln("unable to initialize helm client: %s", err)
+		return err
+	}
+
+	hc := action.NewUpgrade(client)
+	hc.Namespace = name
+	_, err = hc.Run(releaseName, s.Chart, helmvals)
+
+	if err != nil {
+		s.Logger.Errorw("unable to upgrade deployment", "deployment", releaseName, "namespace", name, "error", err)
+		return err
+	}
+
+	s.Logger.Infof("deployment upgraded successfully", "deployment", releaseName, "namespace", name)
+
+	return nil
+}
+
 func (s *Server) newHelmClient(namespace string) (*action.Configuration, error) {
 	config := &action.Configuration{}
 	cliopt := genericclioptions.NewConfigFlags(false)
