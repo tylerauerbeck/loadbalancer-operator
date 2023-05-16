@@ -3,6 +3,8 @@ package srv
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 
 	"helm.sh/helm/v3/pkg/action"
@@ -43,8 +45,13 @@ func (s *Server) removeNamespace(ns string) error {
 
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
-func (s *Server) CreateNamespace(groupID string) (*v1.Namespace, error) {
-	s.Logger.Debugf("ensuring namespace %s exists", groupID)
+func (s *Server) CreateNamespace(name string, hash string) (*v1.Namespace, error) {
+	s.Logger.Debugf("ensuring namespace %s exists", hash)
+
+	if !checkNameLength(hash) || !checkNameLength(name) {
+		return nil, errInvalidObjectNameLength
+	}
+
 	kc, err := kubernetes.NewForConfig(s.KubeClient)
 
 	if err != nil {
@@ -58,8 +65,9 @@ func (s *Server) CreateNamespace(groupID string) (*v1.Namespace, error) {
 			APIVersion: strPt("v1"),
 		},
 		ObjectMetaApplyConfiguration: &applymetav1.ObjectMetaApplyConfiguration{
-			Name:        &groupID,
-			Annotations: map[string]string{"com.infratographer.lb-operator/managed": "true"},
+			Name: &hash,
+			Annotations: map[string]string{"com.infratographer.lb-operator/managed": "true",
+				"com.infratographer.lb-operator/lb-id": name},
 		},
 		Spec:   &applyv1.NamespaceSpecApplyConfiguration{},
 		Status: &applyv1.NamespaceStatusApplyConfiguration{},
@@ -71,7 +79,7 @@ func (s *Server) CreateNamespace(groupID string) (*v1.Namespace, error) {
 		return nil, err
 	}
 
-	if err := attachRoleBinding(s.Context, kc, groupID); err != nil {
+	if err := attachRoleBinding(s.Context, kc, hash); err != nil {
 		s.Logger.Errorw("unable to attach namespace manager rolebinding to namespace", "error", err)
 		return nil, err
 	}
@@ -131,12 +139,14 @@ func (s *Server) newHelmValues(overrides []valueSet) (map[string]interface{}, er
 }
 
 func (s *Server) removeDeployment(name string) error {
-	releaseName := fmt.Sprintf("lb-%s", name)
+	n := hashName(name)
+
+	releaseName := fmt.Sprintf("lb-%s", n)
 	if len(releaseName) > nameLength {
 		releaseName = releaseName[0:nameLength]
 	}
 
-	client, err := s.newHelmClient(name)
+	client, err := s.newHelmClient(n)
 	if err != nil {
 		s.Logger.Errorln("unable to initialize helm client: %s", err)
 		return err
@@ -152,7 +162,7 @@ func (s *Server) removeDeployment(name string) error {
 
 	s.Logger.Infof("%s removed successfully", releaseName)
 
-	err = s.removeNamespace(name)
+	err = s.removeNamespace(n)
 	if err != nil {
 		s.Logger.Errorw("unable to remove namespace", "error", err)
 		return err
@@ -164,7 +174,14 @@ func (s *Server) removeDeployment(name string) error {
 // newDeployment deploys a loadBalancer based upon the configuration provided
 // from the event that is processed.
 func (s *Server) newDeployment(name string, overrides []valueSet) error {
-	releaseName := fmt.Sprintf("lb-%s", name)
+	n := hashName(name)
+
+	if _, err := s.CreateNamespace(name, n); err != nil {
+		s.Logger.Errorw("unable to create namespace", "error", err)
+		return err
+	}
+
+	releaseName := fmt.Sprintf("lb-%s", n)
 	if len(releaseName) > nameLength {
 		releaseName = releaseName[0:nameLength]
 	}
@@ -175,7 +192,7 @@ func (s *Server) newDeployment(name string, overrides []valueSet) error {
 		return err
 	}
 
-	client, err := s.newHelmClient(name)
+	client, err := s.newHelmClient(n)
 	if err != nil {
 		s.Logger.Errorln("unable to initialize helm client: %s", err)
 		return err
@@ -183,15 +200,15 @@ func (s *Server) newDeployment(name string, overrides []valueSet) error {
 
 	hc := action.NewInstall(client)
 	hc.ReleaseName = releaseName
-	hc.Namespace = name
+	hc.Namespace = n
 	_, err = hc.Run(s.Chart, values)
 
 	if err != nil {
-		s.Logger.Errorf("unable to deploy %s to %s", releaseName, name)
+		s.Logger.Errorf("unable to deploy %s to %s", releaseName, n)
 		return err
 	}
 
-	s.Logger.Infof("%s deployed to %s successfully", releaseName, name)
+	s.Logger.Infof("%s deployed to %s successfully", releaseName, n)
 
 	return nil
 }
@@ -218,4 +235,13 @@ func (s *Server) newHelmClient(namespace string) (*action.Configuration, error) 
 
 func strPt(s string) *string {
 	return &s
+}
+
+func checkNameLength(name string) bool {
+	return len(name) <= nameLength && len(name) > 0
+}
+
+func hashName(name string) string {
+	n := md5.Sum([]byte(name))
+	return hex.EncodeToString(n[:])
 }

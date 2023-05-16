@@ -1,46 +1,68 @@
 package srv
 
 import (
+	"reflect"
+
 	"go.infratographer.com/x/pubsubx"
-	"go.infratographer.com/x/urnx"
 )
 
-func (s *Server) processLoadBalancer(msg pubsubx.Message) error {
-	switch msg.EventType {
-	case create:
-		if err := s.processLoadBalancerCreate(msg); err != nil {
+func (s *Server) processLoadBalancer(msgType string, data interface{}) error {
+	switch msgType {
+	case "change":
+		if reflect.TypeOf(data).String() != "pubsubx.ChangeMessage" {
+			return errMessageTypeMismatch
+		}
+
+		msg := data.(pubsubx.ChangeMessage)
+		if err := s.processLoadBalancerChange(msg); err != nil {
 			return err
 		}
-	case update:
-		if err := s.processLoadBalancerUpdate(msg); err != nil {
-			return err
+	case "event":
+		if reflect.TypeOf(data).String() != "pubsubx.EventMessage" {
+			return errMessageTypeMismatch
 		}
-	case delete:
-		if err := s.processLoadBalancerDelete(msg); err != nil {
+
+		msg := data.(pubsubx.EventMessage)
+		if err := s.processLoadBalancerEvent(msg); err != nil {
 			return err
 		}
 	default:
-		s.Logger.Errorw("Unknown action: %s", "action", msg.EventType)
+		return errUnknownMessageEventType
+	}
+
+	return nil
+}
+
+func (s *Server) processLoadBalancerChange(msg pubsubx.ChangeMessage) error {
+	switch msg.EventType {
+	case create:
+		if err := s.processLoadBalancerChangeCreate(msg); err != nil {
+			return err
+		}
+	case update:
+		if err := s.processLoadBalancerChangeUpdate(msg); err != nil {
+			return err
+		}
+	case delete:
+		if err := s.processLoadBalancerChangeDelete(msg); err != nil {
+			return err
+		}
+	default:
 		return errUnknownEventType
 	}
 
 	return nil
 }
 
-func (s *Server) processLoadBalancerCreate(msg pubsubx.Message) error {
-	// lbdata := events.LoadBalancerData{}
-	lbURN, err := urnx.Parse(msg.SubjectURN)
-	if err != nil {
-		s.Logger.Errorw("unable to parse load-balancer URN", "error", err)
-		return err
-	}
+func (s *Server) processLoadBalancerChangeCreate(msg pubsubx.ChangeMessage) error {
+	lbID := msg.SubjectID.String()
 
-	if _, err := s.CreateNamespace(lbURN.ResourceID.String()); err != nil {
-		s.Logger.Errorw("handler unable to create required namespace", "error", err)
-		return err
-	}
+	// if _, err := s.CreateNamespace(lbID); err != nil {
+	// 	s.Logger.Errorw("handler unable to create required namespace", "error", err)
+	// 	return err
+	// }
 
-	if err := s.newDeployment(lbURN.ResourceID.String(), nil); err != nil {
+	if err := s.newDeployment(lbID, nil); err != nil {
 		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
 		return err
 	}
@@ -48,14 +70,10 @@ func (s *Server) processLoadBalancerCreate(msg pubsubx.Message) error {
 	return nil
 }
 
-func (s *Server) processLoadBalancerDelete(msg pubsubx.Message) error {
-	lbURN, err := urnx.Parse(msg.SubjectURN)
-	if err != nil {
-		s.Logger.Errorw("unable to parse load-balancer URN", "error", err)
-		return err
-	}
+func (s *Server) processLoadBalancerChangeDelete(msg pubsubx.ChangeMessage) error {
+	lbID := msg.SubjectID.String()
 
-	if err := s.removeDeployment(lbURN.ResourceID.String()); err != nil {
+	if err := s.removeDeployment(lbID); err != nil {
 		s.Logger.Errorw("handler unable to delete loadbalancer", "error", err)
 		return err
 	}
@@ -63,12 +81,20 @@ func (s *Server) processLoadBalancerDelete(msg pubsubx.Message) error {
 	return nil
 }
 
-func (s *Server) processLoadBalancerUpdate(msg pubsubx.Message) error {
-	_, err := urnx.Parse(msg.SubjectURN)
-	if err != nil {
-		s.Logger.Errorw("unable to parse load-balancer URN", "error", err)
-		return err
-	}
-
+func (s *Server) processLoadBalancerChangeUpdate(msg pubsubx.ChangeMessage) error {
+	_ = msg.SubjectID.String()
 	return nil
+}
+
+func (s *Server) processLoadBalancerEvent(msg pubsubx.EventMessage) error {
+	switch msg.EventType {
+	case create:
+		return nil
+	case update:
+		return nil
+	case delete:
+		return nil
+	default:
+		return errUnknownEventType
+	}
 }

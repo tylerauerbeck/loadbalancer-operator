@@ -6,8 +6,7 @@ const (
 
 	// Event types
 	loadbalancer = "load-balancer"
-	// pools        = "pools"
-	// ports        = "ports"
+	port         = "load-balancer-port"
 
 	// Event actions
 	create = "create"
