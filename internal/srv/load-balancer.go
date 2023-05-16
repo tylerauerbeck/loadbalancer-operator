@@ -57,11 +57,6 @@ func (s *Server) processLoadBalancerChange(msg pubsubx.ChangeMessage) error {
 func (s *Server) processLoadBalancerChangeCreate(msg pubsubx.ChangeMessage) error {
 	lbID := msg.SubjectID.String()
 
-	// if _, err := s.CreateNamespace(lbID); err != nil {
-	// 	s.Logger.Errorw("handler unable to create required namespace", "error", err)
-	// 	return err
-	// }
-
 	if err := s.newDeployment(lbID, nil); err != nil {
 		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
 		return err
