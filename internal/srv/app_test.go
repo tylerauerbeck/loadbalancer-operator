@@ -92,7 +92,7 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 		{
 			name:         "invalid namespace",
 			expectError:  true,
-			appNamespace: "DarkwingDuck",
+			appNamespace: "",
 			kubeclient:   suite.Kubeconfig,
 		},
 		{
@@ -132,7 +132,8 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 				KubeClient: tcase.kubeclient,
 			}
 
-			ns, err := srv.CreateNamespace(tcase.appNamespace)
+			hash := hashName(tcase.appNamespace)
+			ns, err := srv.CreateNamespace(tcase.appNamespace, hash)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -140,6 +141,7 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 			} else {
 				assert.Nil(t, err)
 				assert.Contains(t, ns.Annotations, "com.infratographer.lb-operator/managed")
+				assert.Contains(t, ns.Annotations, "com.infratographer.lb-operator/lb-id")
 			}
 		})
 	}
@@ -226,7 +228,8 @@ func (suite *srvTestSuite) TestNewDeployment() {
 				Chart:      tcase.chart,
 			}
 
-			_, _ = srv.CreateNamespace(tcase.appName)
+			hash := hashName(tcase.appNamespace)
+			_, _ = srv.CreateNamespace(tcase.appName, hash)
 			err = srv.newDeployment(tcase.appName, nil)
 
 			if tcase.expectError {
@@ -379,14 +382,16 @@ func (suite *srvTestSuite) TestRemoveNamespace() {
 				KubeClient: tcase.kubeclient,
 			}
 
+			hash := hashName(tcase.appNamespace)
+
 			if !tcase.expectError {
-				_, err := srv.CreateNamespace(tcase.appNamespace)
+				_, err := srv.CreateNamespace(tcase.appNamespace, hash)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			err := srv.removeNamespace(tcase.appNamespace)
+			err := srv.removeNamespace(hash)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -462,7 +467,8 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 			}
 
 			if !tcase.expectError {
-				_, _ = srv.CreateNamespace(tcase.appName)
+				hash := hashName(tcase.appName)
+				_, _ = srv.CreateNamespace(tcase.appName, hash)
 				err = srv.newDeployment(tcase.appName, nil)
 				if err != nil {
 					t.Fatal(err)

@@ -47,6 +47,17 @@ var processCmd = &cobra.Command{
 	},
 }
 
+var (
+	processDevMode bool
+)
+
+func init() {
+	rootCmd.AddCommand(processCmd)
+
+	// only available as a CLI arg because it shouldn't be something that could accidentially end up in a config file or env var
+	processCmd.Flags().BoolVar(&processDevMode, "dev", false, "dev mode: disables all auth checks, pretty logging, etc.")
+}
+
 func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	if err := validateFlags(); err != nil {
 		return err
@@ -117,7 +128,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 func newJetstreamConnection() (nats.JetStreamContext, error) {
 	opts := []nats.Option{}
 
-	if !viper.GetBool("development") {
+	if !processDevMode && viper.GetString("nats.creds-file") != "" {
 		opts = append(opts, nats.UserCredentials(viper.GetString("nats.creds-file")))
 	}
 
