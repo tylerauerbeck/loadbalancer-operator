@@ -1,3 +1,4 @@
+![logo](https://github.com/infratographer/website/blob/main/source/theme/assets/pictures/logo.jpg?raw=true)
 # loadbalanceroperator 
 
 **Note:** loadbalanceroperator is currently under active (and early) development and is likely to change quite frequently.
