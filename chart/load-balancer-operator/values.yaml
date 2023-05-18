@@ -45,7 +45,10 @@ operator:
     auth:
       secretName: "events-creds"
       credsPath: "/creds"
-    subjects: "events"
+    subjectPrefix: "com.infratographer"
+    subjects:
+      - "changes.*.lb"
+      - "events.create.port"
     queue: "my-queue"
 
 reloader:

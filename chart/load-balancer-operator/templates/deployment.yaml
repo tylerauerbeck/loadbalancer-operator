@@ -48,7 +48,7 @@ spec:
             - name: LOADBALANCEROPERATOR_NATS_STREAM_NAME
               value: "{{ .Values.operator.events.queue | default "loadbalanceroperator" }}"
             - name: LOADBALANCEROPERATOR_NATS_SUBJECT_PREFIX
-              value: "{{ .Values.operator.events.subjects }}"
+              value: "{{ .Values.operator.events.subjectPrefix }}"
           {{- if .Values.operator.events.auth.secretName }}
             - name: LOADBALANCEROPERATOR_NATS_CREDS_FILE
               value: "/creds"
@@ -65,6 +65,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - process
+          {{- range .Values.operator.events.subjects }}
+            - --nats-subjects={{ . }}
+          {{- end }}
           {{- range .Values.operator.chart.valuesCPUFlag }}
             - --helm-cpu-flag={{ . }}
           {{- end }}
