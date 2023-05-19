@@ -1,5 +1,15 @@
+# binary
 loadbalanceroperator
+
+# commonly used files that we don't want ending up in our repo
 kubeconfig
 *.tgz
+
+# coverage files
 *.out
+
+# generated binaries
 bin
+
+# vscode directory
+.vscode
