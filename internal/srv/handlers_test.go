@@ -78,10 +78,34 @@ func (suite srvTestSuite) TestMessageRouter() { //nolint:govet
 		},
 		{
 			name:      "unknown event type",
-			eventType: "",
+			eventType: "somethingunknown",
 			msg: pubsubx.ChangeMessage{
 				SubjectID: "loadbal-lkjadlfjk",
 				EventType: "create",
+			},
+		},
+		{
+			name:      "test port",
+			eventType: "event",
+			msg: pubsubx.EventMessage{
+				SubjectID: "loadprt-kjasdlkjf",
+				EventType: "create",
+			},
+		},
+		{
+			name:      "bad port",
+			eventType: "change",
+			msg: pubsubx.ChangeMessage{
+				SubjectID: "loadprt-lkjasdlfkj",
+				EventType: "unknown",
+			},
+		},
+		{
+			name:      "bad lb",
+			eventType: "event",
+			msg: pubsubx.EventMessage{
+				SubjectID: "loadbal-lkjasdflkj",
+				EventType: "unknown",
 			},
 		},
 	}
@@ -98,4 +122,39 @@ func (suite srvTestSuite) TestMessageRouter() { //nolint:govet
 			srv.messageRouter(&nmsg)
 		})
 	}
+}
+
+func (suite srvTestSuite) TestPrefixLookup() { //nolint:govet
+	type testCase struct {
+		name   string
+		prefix string
+		value  string
+	}
+
+	testCases := []testCase{
+		{
+			name:   "load-balancer lookup",
+			prefix: "loadbal",
+			value:  loadbalancer,
+		},
+		{
+			name:   "load-balancer-port lookup",
+			prefix: "loadprt",
+			value:  port,
+		},
+		{
+			name:   "unknown prefix",
+			prefix: "unknown",
+			value:  "",
+		},
+	}
+
+	for _, tcase := range testCases {
+		suite.T().Run(tcase.name, func(t *testing.T) {
+
+			subject := PrefixLookup(tcase.prefix)
+			suite.Equal(tcase.value, subject)
+		})
+	}
+
 }

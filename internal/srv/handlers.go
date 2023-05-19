@@ -27,10 +27,14 @@ func (s *Server) messageRouter(m *nats.Msg) {
 
 	eventType := m.Header.Get("X-INFRA9-MSG-TYPE")
 
-	switch prefixLookup(subj.Prefix()) {
+	switch PrefixLookup(subj.Prefix()) {
 	case loadbalancer:
 		if err := s.processLoadBalancer(eventType, data); err != nil {
 			s.Logger.Errorw("Unable to process load balancer", "error", err)
+		}
+	case port:
+		if err := s.processLoadBalancerPort(eventType, data); err != nil {
+			s.Logger.Errorw("Unable to process load balancer port", "error", err)
 		}
 	default:
 		s.Logger.Errorw("Unknown resource type: %s", "resource_type", subj.Prefix())
@@ -43,14 +47,14 @@ func getSubject(m *nats.Msg) (string, interface{}) {
 	case "change":
 		msg := pubsubx.ChangeMessage{}
 		if err := json.Unmarshal(m.Data, &msg); err != nil {
-			fmt.Println("Error unmarshalling change message")
+			return "", nil
 		}
 
 		return msg.SubjectID.String(), msg
 	case "event":
 		msg := pubsubx.EventMessage{}
 		if err := json.Unmarshal(m.Data, &msg); err != nil {
-			fmt.Println("Error unmarshalling event message")
+			return "", nil
 		}
 
 		return msg.SubjectID.String(), msg
@@ -60,7 +64,7 @@ func getSubject(m *nats.Msg) (string, interface{}) {
 	}
 }
 
-func prefixLookup(s string) string {
+func PrefixLookup(s string) string {
 	switch s {
 	case "loadbal":
 		return loadbalancer
