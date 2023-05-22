@@ -155,6 +155,7 @@ require (
 
 require (
 	github.com/labstack/echo/v4 v4.10.2
+	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30
 	sigs.k8s.io/controller-runtime v0.14.5
 )
 

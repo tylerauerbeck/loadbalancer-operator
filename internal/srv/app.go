@@ -6,7 +6,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"reflect"
 
+	"go.infratographer.com/x/gidx"
+	"golang.org/x/exp/slices"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
@@ -23,7 +26,8 @@ import (
 )
 
 const (
-	nameLength = 53
+	nameLength           = 53
+	managedHelmKeyPrefix = "operator.managed"
 )
 
 func (s *Server) removeNamespace(ns string) error {
@@ -115,7 +119,7 @@ func attachRoleBinding(ctx context.Context, client *kubernetes.Clientset, namesp
 	return nil
 }
 
-func (s *Server) newHelmValues(overrides []valueSet) (map[string]interface{}, error) {
+func (s *Server) newHelmValues(lb *loadBalancer) (map[string]interface{}, error) {
 	provider := getter.All(&cli.EnvSettings{})
 
 	valOpts := &values.Options{
@@ -128,8 +132,10 @@ func (s *Server) newHelmValues(overrides []valueSet) (map[string]interface{}, er
 		return nil, err
 	}
 
-	for _, override := range overrides {
-		if err := strvals.ParseInto(override.helmKey+"="+override.value, values); err != nil {
+	additionalValues := generateLBHelmValues(lb)
+
+	for _, override := range additionalValues {
+		if err := strvals.ParseInto(override, values); err != nil {
 			s.Logger.Errorw("unable to parse values", "error", err)
 			return nil, err
 		}
@@ -173,10 +179,10 @@ func (s *Server) removeDeployment(name string) error {
 
 // newDeployment deploys a loadBalancer based upon the configuration provided
 // from the event that is processed.
-func (s *Server) newDeployment(name string, overrides []valueSet) error {
-	n := hashName(name)
+func (s *Server) newDeployment(lb *loadBalancer) error {
+	n := hashName(lb.loadBalancerID.String())
 
-	if _, err := s.CreateNamespace(name, n); err != nil {
+	if _, err := s.CreateNamespace(lb.loadBalancerID.String(), n); err != nil {
 		s.Logger.Errorw("unable to create namespace", "error", err)
 		return err
 	}
@@ -186,7 +192,7 @@ func (s *Server) newDeployment(name string, overrides []valueSet) error {
 		releaseName = releaseName[0:nameLength]
 	}
 
-	values, err := s.newHelmValues(overrides)
+	values, err := s.newHelmValues(lb)
 	if err != nil {
 		s.Logger.Errorw("unable to prepare chart values", "error", err)
 		return err
@@ -244,4 +250,34 @@ func checkNameLength(name string) bool {
 func hashName(name string) string {
 	n := md5.Sum([]byte(name))
 	return hex.EncodeToString(n[:])
+}
+
+func generateLBHelmValues(lb *loadBalancer) []string {
+	var vals []string
+
+	v := reflect.ValueOf(lb).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		val := fmt.Sprintf("%s.%s=%s", managedHelmKeyPrefix, v.Type().Field(i).Name, v.Field(i))
+		vals = append(vals, val)
+	}
+
+	return vals
+}
+
+func (s *Server) newLoadBalancer(lbID gidx.PrefixedID, additionalSubjs []gidx.PrefixedID) *loadBalancer {
+	lb := &loadBalancer{
+		loadBalancerID: lbID,
+	}
+
+	for _, sub := range additionalSubjs {
+		switch {
+		// TODO: clean this up once we have a better way to handle this
+		case sub.Prefix() == "tnnttnt":
+			lb.loadBalancerTenantID = sub
+		case slices.Contains(s.Locations, sub.String()):
+			lb.loadBalancerLocationID = sub
+		}
+	}
+
+	return lb
 }

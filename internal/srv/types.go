@@ -1,6 +1,10 @@
 package srv
 
-import "errors"
+import (
+	"errors"
+
+	"go.infratographer.com/x/gidx"
+)
 
 const (
 
@@ -18,3 +22,9 @@ var (
 	errUnknownEventType = errors.New("unknown event type")
 	// errUnableToProcess  = errors.New("unable to process message")
 )
+
+type loadBalancer struct {
+	loadBalancerID         gidx.PrefixedID
+	loadBalancerTenantID   gidx.PrefixedID
+	loadBalancerLocationID gidx.PrefixedID
+}

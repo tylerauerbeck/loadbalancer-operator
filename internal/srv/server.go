@@ -28,6 +28,7 @@ type Server struct {
 	Chart           *chart.Chart
 	ChartPath       string
 	ValuesPath      string
+	Locations       []string
 }
 
 // Run will start the server queue connections and healthcheck endpoints

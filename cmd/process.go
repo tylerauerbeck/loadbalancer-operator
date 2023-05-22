@@ -107,6 +107,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		Subjects:        viper.GetStringSlice("nats.subjects"),
 		StreamName:      viper.GetString("nats.stream-name"),
 		ValuesPath:      viper.GetString("chart-values-path"),
+		Locations:       viper.GetStringSlice("locations"),
 	}
 
 	if err := server.Run(cx); err != nil {

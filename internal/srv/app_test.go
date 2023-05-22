@@ -16,6 +16,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
+
+	"go.infratographer.com/x/gidx"
 )
 
 func (suite *srvTestSuite) TestNewHelmValues() {
@@ -24,6 +26,7 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 		valuesPath  string
 		overrides   []valueSet
 		expectError bool
+		lb          *loadBalancer
 	}
 
 	pwd, err := os.Getwd()
@@ -37,6 +40,11 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 			expectError: false,
 			valuesPath:  pwd + "/../../hack/ci/values.yaml",
 			overrides:   nil,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 		{
 			name:        "valid overrides",
@@ -48,12 +56,18 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 					value:   "world",
 				},
 			},
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 		{
 			name:        "missing values path",
 			expectError: true,
 			valuesPath:  "",
 			overrides:   nil,
+			lb:          nil,
 		},
 	}
 
@@ -63,7 +77,7 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 				Logger:     zap.NewNop().Sugar(),
 				ValuesPath: tcase.valuesPath,
 			}
-			values, err := srv.newHelmValues(tcase.overrides)
+			values, err := srv.newHelmValues(tcase.lb)
 			if tcase.expectError {
 				assert.NotNil(t, err)
 			} else {
@@ -156,6 +170,7 @@ func (suite *srvTestSuite) TestNewDeployment() {
 		chart        *chart.Chart
 		kubeClient   *rest.Config
 		valPath      string
+		lb           *loadBalancer
 	}
 
 	testDir, err := os.MkdirTemp("", "test-new-deployment")
@@ -189,6 +204,11 @@ func (suite *srvTestSuite) TestNewDeployment() {
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
 			kubeClient:   suite.Kubeconfig,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 		{
 			name:         "missing values path",
@@ -198,6 +218,11 @@ func (suite *srvTestSuite) TestNewDeployment() {
 			chart:        ch,
 			valPath:      "",
 			kubeClient:   suite.Kubeconfig,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 		{
 			name:         "invalid chart",
@@ -215,6 +240,11 @@ func (suite *srvTestSuite) TestNewDeployment() {
 			},
 			valPath:    pwd + "/../../hack/ci/values.yaml",
 			kubeClient: suite.Kubeconfig,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 	}
 
@@ -230,7 +260,7 @@ func (suite *srvTestSuite) TestNewDeployment() {
 
 			hash := hashName(tcase.appNamespace)
 			_, _ = srv.CreateNamespace(tcase.appName, hash)
-			err = srv.newDeployment(tcase.appName, nil)
+			err = srv.newDeployment(tcase.lb)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -411,9 +441,10 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 		chart        *chart.Chart
 		kubeClient   *rest.Config
 		valPath      string
+		lb           *loadBalancer
 	}
 
-	testDir, err := os.MkdirTemp("", "test-new-deployment")
+	testDir, err := os.MkdirTemp("", "test-remove-deployment")
 	if err != nil {
 		suite.T().Fatal(err)
 	}
@@ -444,6 +475,11 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
 			kubeClient:   suite.Kubeconfig,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 		{
 			name:         "invalid deployment",
@@ -453,6 +489,11 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 			chart:        ch,
 			valPath:      pwd + "/../../hack/ci/values.yaml",
 			kubeClient:   suite.Kubeconfig,
+			lb: &loadBalancer{
+				loadBalancerID:         gidx.MustNewID("loadbal"),
+				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
+				loadBalancerLocationID: "lctnloc-lkjasdflkj",
+			},
 		},
 	}
 
@@ -467,14 +508,14 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 			}
 
 			if !tcase.expectError {
-				hash := hashName(tcase.appName)
-				_, _ = srv.CreateNamespace(tcase.appName, hash)
-				err = srv.newDeployment(tcase.appName, nil)
+				hash := hashName(tcase.lb.loadBalancerID.String())
+				_, _ = srv.CreateNamespace(tcase.lb.loadBalancerID.String(), hash)
+				err = srv.newDeployment(tcase.lb)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
-			err = srv.removeDeployment(tcase.appName)
+			err = srv.removeDeployment(tcase.lb.loadBalancerID.String())
 
 			if tcase.expectError {
 				assert.NotNil(t, err)

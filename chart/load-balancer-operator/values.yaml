@@ -50,6 +50,12 @@ operator:
       - "changes.*.lb"
       - "events.create.port"
     queue: "my-queue"
+  # these will be overwritten by the operator but are provided here for reference
+  managed:
+    loadBalancerID: ""
+    loadBalancerTenantID: ""
+    loadBalancerLocationID: ""
+
 
 reloader:
   enabled: false
