@@ -4,6 +4,7 @@ package srv
 import (
 	"context"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"reflect"
@@ -49,10 +50,10 @@ func (s *Server) removeNamespace(ns string) error {
 
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
-func (s *Server) CreateNamespace(name string, hash string) (*v1.Namespace, error) {
+func (s *Server) CreateNamespace(hash string, encoded string) (*v1.Namespace, error) {
 	s.Logger.Debugf("ensuring namespace %s exists", hash)
 
-	if !checkNameLength(hash) || !checkNameLength(name) {
+	if !checkNameLength(hash) || !checkNameLength(encoded) {
 		return nil, errInvalidObjectNameLength
 	}
 
@@ -70,8 +71,8 @@ func (s *Server) CreateNamespace(name string, hash string) (*v1.Namespace, error
 		},
 		ObjectMetaApplyConfiguration: &applymetav1.ObjectMetaApplyConfiguration{
 			Name: &hash,
-			Annotations: map[string]string{"com.infratographer.lb-operator/managed": "true",
-				"com.infratographer.lb-operator/lb-id": name},
+			Labels: map[string]string{"com.infratographer.lb-operator/managed": "true",
+				"com.infratographer.lb-operator/lb-id": encoded},
 		},
 		Spec:   &applyv1.NamespaceSpecApplyConfiguration{},
 		Status: &applyv1.NamespaceStatusApplyConfiguration{},
@@ -181,8 +182,9 @@ func (s *Server) removeDeployment(name string) error {
 // from the event that is processed.
 func (s *Server) newDeployment(lb *loadBalancer) error {
 	n := hashName(lb.loadBalancerID.String())
+	enc := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(lb.loadBalancerID.String()))
 
-	if _, err := s.CreateNamespace(lb.loadBalancerID.String(), n); err != nil {
+	if _, err := s.CreateNamespace(n, enc); err != nil {
 		s.Logger.Errorw("unable to create namespace", "error", err)
 		return err
 	}
@@ -257,7 +259,8 @@ func generateLBHelmValues(lb *loadBalancer) []string {
 
 	v := reflect.ValueOf(lb).Elem()
 	for i := 0; i < v.NumField(); i++ {
-		val := fmt.Sprintf("%s.%s=%s", managedHelmKeyPrefix, v.Type().Field(i).Name, v.Field(i))
+		field := fmt.Sprintf("%s", v.Field(i))
+		val := fmt.Sprintf("%s.%s=%s", managedHelmKeyPrefix, v.Type().Field(i).Name, base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(field)))
 		vals = append(vals, val)
 	}
 

@@ -10,11 +10,6 @@ import (
 	"go.infratographer.com/x/pubsubx"
 )
 
-type valueSet struct {
-	helmKey string
-	value   string
-}
-
 func (s *Server) messageRouter(m *nats.Msg) {
 	subjString, data := getSubject(m)
 

@@ -2,6 +2,7 @@ package srv
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"testing"
 
@@ -24,7 +25,6 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 	type testCase struct {
 		name        string
 		valuesPath  string
-		overrides   []valueSet
 		expectError bool
 		lb          *loadBalancer
 	}
@@ -39,7 +39,6 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 			name:        "valid values path",
 			expectError: false,
 			valuesPath:  pwd + "/../../hack/ci/values.yaml",
-			overrides:   nil,
 			lb: &loadBalancer{
 				loadBalancerID:         gidx.MustNewID("loadbal"),
 				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
@@ -50,12 +49,6 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 			name:        "valid overrides",
 			expectError: false,
 			valuesPath:  pwd + "/../../hack/ci/values.yaml",
-			overrides: []valueSet{
-				{
-					helmKey: "hello",
-					value:   "world",
-				},
-			},
 			lb: &loadBalancer{
 				loadBalancerID:         gidx.MustNewID("loadbal"),
 				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
@@ -66,7 +59,6 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 			name:        "missing values path",
 			expectError: true,
 			valuesPath:  "",
-			overrides:   nil,
 			lb:          nil,
 		},
 	}
@@ -154,8 +146,8 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 				assert.Nil(t, ns)
 			} else {
 				assert.Nil(t, err)
-				assert.Contains(t, ns.Annotations, "com.infratographer.lb-operator/managed")
-				assert.Contains(t, ns.Annotations, "com.infratographer.lb-operator/lb-id")
+				assert.Contains(t, ns.Labels, "com.infratographer.lb-operator/managed")
+				assert.Contains(t, ns.Labels, "com.infratographer.lb-operator/lb-id")
 			}
 		})
 	}
@@ -415,7 +407,7 @@ func (suite *srvTestSuite) TestRemoveNamespace() {
 			hash := hashName(tcase.appNamespace)
 
 			if !tcase.expectError {
-				_, err := srv.CreateNamespace(tcase.appNamespace, hash)
+				_, err := srv.CreateNamespace(hash, base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(tcase.appNamespace)))
 				if err != nil {
 					t.Fatal(err)
 				}
