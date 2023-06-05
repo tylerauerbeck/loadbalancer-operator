@@ -10,5 +10,8 @@ var (
 	// ErrNATSStreamName is returned when a NATS Stream Name is missing
 	ErrNATSStreamName = errors.New("nats stream name is required and cannot be empty")
 	// ErrChartPath is returned when a Helm chart path is missing
-	ErrChartPath = errors.New("chart path is required and cannot be empty")
+	errChartPath         = errors.New("chart path is required and cannot be empty")
+	errRequiredTopics    = errors.New("at least one topic is required")
+	errInvalidKubeClient = errors.New("failed to create kubernetes client")
+	errInvalidHelmChart  = errors.New("failed to load helm chart")
 )

@@ -4,16 +4,19 @@ package utils
 import (
 	"os"
 
-	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/release"
+
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	natsserver "github.com/nats-io/nats-server/v2/server"
+	"github.com/stretchr/testify/suite"
+
+	"go.infratographer.com/x/events"
+	"go.infratographer.com/x/testing/eventtools"
 )
 
 // CreateTestChart creates a dummy chart for testing purposes
@@ -47,16 +50,22 @@ func CreateTestValues(outputDir string, yamlString string) (string, error) {
 
 type OperatorTestSuite struct {
 	suite.Suite
-	NATSServer *natsserver.Server
+	PubConfig  events.PublisherConfig
+	SubConfig  events.SubscriberConfig
 	Logger     *zap.SugaredLogger
 	Kubeenv    *envtest.Environment
 	Kubeconfig *rest.Config
 }
 
 func (suite *OperatorTestSuite) SetupSuite() {
-	suite.NATSServer = RunServer()
-	//nolint:errcheck
-	suite.NATSServer.EnableJetStream(&natsserver.JetStreamConfig{})
+	pub, sub, err := eventtools.NewNatsServer()
+	if err != nil {
+		panic(err)
+	}
+
+	suite.PubConfig = pub
+
+	suite.SubConfig = sub
 
 	env, cfg := StartKube()
 	suite.Kubeenv = env
@@ -64,7 +73,6 @@ func (suite *OperatorTestSuite) SetupSuite() {
 }
 
 func (suite *OperatorTestSuite) TearDownAllSuite() {
-	suite.NATSServer.Shutdown()
 	stop := suite.Kubeenv.Stop()
 
 	if stop != nil {

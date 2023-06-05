@@ -1,30 +1,20 @@
 package srv
 
 import (
-	"errors"
-
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/gidx"
 )
 
 const (
+	LBPrefix = "loadbal"
 
-	// Event types
-	loadbalancer = "load-balancer"
-	port         = "load-balancer-port"
-
-	// Event actions
-	create = "create"
-	update = "update"
-	delete = "delete"
-)
-
-var (
-	errUnknownEventType = errors.New("unknown event type")
-	// errUnableToProcess  = errors.New("unable to process message")
+	typeLB      = 1
+	typeAssocLB = 2
+	typeNoLB    = 0
 )
 
 type loadBalancer struct {
-	loadBalancerID         gidx.PrefixedID
-	loadBalancerTenantID   gidx.PrefixedID
-	loadBalancerLocationID gidx.PrefixedID
+	loadBalancerID gidx.PrefixedID
+	lbData         *lbapi.GetLoadBalancer
+	lbType         int
 }

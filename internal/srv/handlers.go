@@ -1,67 +1,101 @@
 package srv
 
 import (
-	"encoding/json"
-	"fmt"
+	"strings"
 
-	"github.com/nats-io/nats.go"
-
+	"github.com/ThreeDotsLabs/watermill/message"
+	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
-	"go.infratographer.com/x/pubsubx"
+	"golang.org/x/exp/slices"
 )
 
-func (s *Server) messageRouter(m *nats.Msg) {
-	subjString, data := getSubject(m)
-
-	subj, err := gidx.Parse(subjString)
-	if err != nil {
-		// TODO: handle error and requeue or send to dead letter queue
-		s.Logger.Errorw("Unable to parse subject ID: %s", "error", err)
-		return
+func (s *Server) locationCheck(i gidx.PrefixedID) bool {
+	for _, s := range s.Locations {
+		if strings.HasSuffix(i.String(), s) {
+			return true
+		}
 	}
 
-	eventType := m.Header.Get("X-INFRA9-MSG-TYPE")
+	return false
+}
 
-	switch prefixLookup(subj.Prefix()) {
-	case loadbalancer:
-		if err := s.processLoadBalancer(eventType, data); err != nil {
-			s.Logger.Errorw("Unable to process load balancer", "error", err)
+func (s *Server) processEvent(messages <-chan *message.Message) {
+	for msg := range messages {
+		s.Logger.Infof("received event message: %s, payload: %s\n", msg.UUID, string(msg.Payload))
+
+		m, err := events.UnmarshalEventMessage(msg.Payload)
+		if err != nil {
+			s.Logger.Errorw("unable to unmarshal event message", "error", err)
+			msg.Nack()
 		}
-	default:
-		s.Logger.Errorw("Unknown resource type: %s", "resource_type", subj.Prefix())
+
+		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
+			lb, err := s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
+			if err != nil {
+				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
+				msg.Nack()
+			}
+
+			if lb.lbType != typeNoLB {
+				switch {
+				case m.EventType == "create" && lb.lbType == typeLB:
+					s.Logger.Debugw("stub for creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+				case m.EventType == "delete" && lb.lbType == typeLB:
+					s.Logger.Debugw("stub for deleting loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+				default:
+					s.Logger.Debugw("stub for updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+				}
+			}
+		}
+		// we need to Acknowledge that we received and processed the message,
+		// otherwise, it will be resent over and over again.
+		msg.Ack()
 	}
 }
 
-func getSubject(m *nats.Msg) (string, interface{}) {
-	t := m.Header.Get("X-INFRA9-MSG-TYPE")
-	switch t {
-	case "change":
-		msg := pubsubx.ChangeMessage{}
-		if err := json.Unmarshal(m.Data, &msg); err != nil {
-			fmt.Println("Error unmarshalling change message")
+func (s *Server) processChange(messages <-chan *message.Message) {
+	for msg := range messages {
+		m, err := events.UnmarshalChangeMessage(msg.Payload)
+		if err != nil {
+			s.Logger.Errorw("unable to unmarshal change message", "error", err, "messageID", msg.UUID)
+			msg.Nack()
 		}
 
-		return msg.SubjectID.String(), msg
-	case "event":
-		msg := pubsubx.EventMessage{}
-		if err := json.Unmarshal(m.Data, &msg); err != nil {
-			fmt.Println("Error unmarshalling event message")
+		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
+			lb, err := s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
+			if err != nil {
+				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
+				msg.Nack()
+			}
+
+			if lb.lbType != typeNoLB {
+				switch {
+				case m.EventType == string(events.CreateChangeType) && lb.lbType == typeLB:
+					s.Logger.Debugw("creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+
+					if err := s.processLoadBalancerChangeCreate(lb); err != nil {
+						s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
+						msg.Nack()
+					}
+				case m.EventType == string(events.DeleteChangeType) && lb.lbType == typeLB:
+					s.Logger.Debugw("deleting loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+
+					if err := s.processLoadBalancerChangeDelete(lb); err != nil {
+						s.Logger.Errorw("handler unable to delete loadbalancer", "error", err)
+						msg.Nack()
+					}
+				default:
+					s.Logger.Debugw("updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+
+					if err := s.processLoadBalancerChangeUpdate(lb); err != nil {
+						s.Logger.Errorw("handler unable to update loadbalancer", "error", err)
+						msg.Nack()
+					}
+				}
+			}
 		}
-
-		return msg.SubjectID.String(), msg
-	default:
-		fmt.Println("Unknown")
-		return "", nil
-	}
-}
-
-func prefixLookup(s string) string {
-	switch s {
-	case "loadbal":
-		return loadbalancer
-	case "loadprt":
-		return port
-	default:
-		return ""
+		// we need to Acknowledge that we received and processed the message,
+		// otherwise, it will be resent over and over again.
+		msg.Ack()
 	}
 }

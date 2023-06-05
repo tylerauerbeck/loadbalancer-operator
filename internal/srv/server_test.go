@@ -2,161 +2,68 @@ package srv
 
 import (
 	"context"
-	"testing"
+	"os"
 
-	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"go.uber.org/zap"
-
-	"go.infratographer.com/x/echox"
-	"go.infratographer.com/x/versionx"
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
+	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+
+	"go.infratographer.com/x/echox"
+	"go.infratographer.com/x/gidx"
+	"go.uber.org/zap"
+	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func (suite srvTestSuite) TestConfigureSubscribers() { //nolint:govet
-	type testCase struct {
-		name        string
-		subjects    []string
-		expectError bool
+func (s srvTestSuite) TestRun() { //nolint:govet
+	id := gidx.MustNewID("loadbal")
+
+	api := mock.DummyAPI(id.String())
+	api.Start()
+
+	eSrv, _ := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	testDir, err := os.MkdirTemp("", "test-process-change")
+	if err != nil {
+		s.T().Fatal(err)
 	}
 
-	js := utils.GetJetstreamConnection(suite.NATSServer)
+	defer os.RemoveAll(testDir)
 
-	_, _ = js.AddStream(&nats.StreamConfig{
-		Name:     "TestConfigureSubscribers",
-		Subjects: []string{"thing.foo", "thing.bar"},
-		MaxBytes: 1024,
-	})
-
-	testCases := []testCase{
-		{
-			name:        "single subject",
-			subjects:    []string{"foo"},
-			expectError: false,
-		},
-		{
-			name:        "multiple subjects",
-			subjects:    []string{"foo", "bar"},
-			expectError: false,
-		},
-		{
-			name:        "no subjects",
-			subjects:    []string{},
-			expectError: false,
-		},
-		{
-			name:        "invalid subject",
-			subjects:    []string{"boom", "bar", "baz"},
-			expectError: true,
-		},
+	chartPath, err := utils.CreateTestChart(testDir)
+	if err != nil {
+		s.T().Fatal(err)
 	}
 
-	for _, tc := range testCases {
-		suite.T().Run(tc.name, func(t *testing.T) {
-			s := &Server{
-				Subjects:        tc.subjects,
-				StreamName:      "TestConfigureSubscribers",
-				Prefix:          "thing",
-				JetstreamClient: js,
-				Logger:          zap.NewNop().Sugar(),
-			}
-
-			err := s.configureSubscribers()
-
-			if tc.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
+	ch, err := loader.Load(chartPath)
+	if err != nil {
+		s.T().Fatal(err)
 	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
+	srv := Server{
+		APIClient:        lbapi.NewClient(api.URL),
+		Echo:             eSrv,
+		Context:          context.TODO(),
+		Logger:           zap.NewNop().Sugar(),
+		KubeClient:       s.Kubeconfig,
+		SubscriberConfig: s.SubConfig,
+		Topics:           []string{"*.load-balancer-run"},
+		Chart:            ch,
+		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
+		Locations:        []string{"abcd1234"},
+	}
+
+	err = srv.Run(srv.Context)
+
+	assert.Nil(s.T(), err)
+	assert.Len(s.T(), srv.eventChannels, len(srv.Topics))
+	assert.Len(s.T(), srv.changeChannels, len(srv.Topics))
 }
 
-func (suite srvTestSuite) TestRun() { //nolint:govet
-	type testCase struct {
-		name        string
-		s           *Server
-		expectError bool
-	}
-
-	js := utils.GetJetstreamConnection(suite.NATSServer)
-
-	_, err := js.AddStream(&nats.StreamConfig{
-		Name:     "TestRunner",
-		Subjects: []string{"run.foo", "run.bar"},
-		MaxBytes: 1024,
-	})
-
-	require.NoError(suite.T(), err, "unexpected error adding stream")
-
-	requireEchoxNewServer := func(logger *zap.Logger, cfg echox.Config, version *versionx.Details) *echox.Server {
-		s, err := echox.NewServer(logger, cfg, version)
-
-		require.NoError(suite.T(), err, "nexpected error creating new server")
-
-		return s
-	}
-
-	testCases := []testCase{
-		{
-			name: "valid run",
-			s: &Server{
-				Echo:            requireEchoxNewServer(zap.NewNop(), echox.Config{}, nil),
-				Context:         context.TODO(),
-				Subjects:        []string{"foo"},
-				StreamName:      "TestRunner",
-				Prefix:          "run",
-				JetstreamClient: js,
-				Logger:          zap.NewNop().Sugar(),
-			},
-			// hcport:      ":8900",
-			expectError: false,
-		},
-		{
-			name: "bad subject",
-			s: &Server{
-				Echo:            requireEchoxNewServer(zap.NewNop(), echox.Config{}, nil),
-				Context:         context.TODO(),
-				Subjects:        []string{"foo", "bar", "baz"},
-				StreamName:      "TestRunner",
-				Prefix:          "run",
-				JetstreamClient: js,
-				Logger:          zap.NewNop().Sugar(),
-			},
-			// hcport:      ":8901",
-			expectError: true,
-		},
-		// {
-		// 	name:   "bad healthcheck port",
-		// 	hcport: "8675309",
-		// 	s: &Server{
-		// 		Echo:            requireEchoxNewServer(zap.NewNop(), echox.Config{}, nil),
-		// 		Context:         context.TODO(),
-		// 		Subjects:        []string{"foo"},
-		// 		StreamName:      "TestRunner",
-		// 		Prefix:          "run",
-		// 		JetstreamClient: js,
-		// 		Logger:          zap.NewNop().Sugar(),
-		// 	},
-		// },
-	}
-
-	for _, tc := range testCases {
-		suite.T().Run(tc.name, func(t *testing.T) {
-			err := tc.s.Run(tc.s.Context)
-
-			// // if tc.hcport != "" {
-			// viper.Set("healthcheck.port", tc.hcport)
-			// // }
-
-			if tc.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
+// TODO: add test for consumer that is already bound

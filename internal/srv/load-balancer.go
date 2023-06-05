@@ -1,96 +1,54 @@
 package srv
 
 import (
-	"reflect"
-
-	"go.infratographer.com/x/pubsubx"
+	"go.infratographer.com/x/gidx"
 )
 
-func (s *Server) processLoadBalancer(msgType string, data interface{}) error {
-	switch msgType {
-	case "change":
-		if reflect.TypeOf(data).String() != "pubsubx.ChangeMessage" {
-			return errMessageTypeMismatch
+func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) (*loadBalancer, error) {
+	l := new(loadBalancer)
+	l.isLoadBalancer(subj, adds)
+
+	if l.lbType != typeNoLB {
+		data, err := s.APIClient.GetLoadBalancer(s.Context, l.loadBalancerID.String())
+		if err != nil {
+			s.Logger.Errorw("unable to get loadbalancer from API", "error", err)
+			return nil, err
 		}
 
-		msg := data.(pubsubx.ChangeMessage)
-		if err := s.processLoadBalancerChange(msg); err != nil {
-			return err
-		}
-	case "event":
-		if reflect.TypeOf(data).String() != "pubsubx.EventMessage" {
-			return errMessageTypeMismatch
-		}
+		l.lbData = data
+	}
 
-		msg := data.(pubsubx.EventMessage)
-		if err := s.processLoadBalancerEvent(msg); err != nil {
-			return err
-		}
+	return l, nil
+}
+
+func (l *loadBalancer) isLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) {
+	check, subs := getLBFromAddSubjs(adds)
+
+	switch {
+	case subj.Prefix() == LBPrefix:
+		l.loadBalancerID = subj
+		l.lbType = typeLB
+
+		return
+	case check:
+		l.loadBalancerID = subs
+		l.lbType = typeAssocLB
+
+		return
 	default:
-		return errUnknownMessageEventType
+		l.lbType = typeNoLB
+		return
 	}
-
-	return nil
 }
 
-func (s *Server) processLoadBalancerChange(msg pubsubx.ChangeMessage) error {
-	switch msg.EventType {
-	case create:
-		if err := s.processLoadBalancerChangeCreate(msg); err != nil {
-			return err
+func getLBFromAddSubjs(adds []gidx.PrefixedID) (bool, gidx.PrefixedID) {
+	for _, i := range adds {
+		if i.Prefix() == LBPrefix {
+			return true, i
 		}
-	case update:
-		if err := s.processLoadBalancerChangeUpdate(msg); err != nil {
-			return err
-		}
-	case delete:
-		if err := s.processLoadBalancerChangeDelete(msg); err != nil {
-			return err
-		}
-	default:
-		return errUnknownEventType
 	}
 
-	return nil
-}
+	id := new(gidx.PrefixedID)
 
-func (s *Server) processLoadBalancerChangeCreate(msg pubsubx.ChangeMessage) error {
-	// lbID := msg.SubjectID.String()
-	lb := s.newLoadBalancer(msg.SubjectID, msg.AdditionalSubjectIDs)
-
-	if err := s.newDeployment(lb); err != nil {
-		s.Logger.Errorw("handler unable to create loadbalancer", "error", err)
-		return err
-	}
-
-	return nil
-}
-
-func (s *Server) processLoadBalancerChangeDelete(msg pubsubx.ChangeMessage) error {
-	lbID := msg.SubjectID.String()
-
-	if err := s.removeDeployment(lbID); err != nil {
-		s.Logger.Errorw("handler unable to delete loadbalancer", "error", err)
-		return err
-	}
-
-	return nil
-}
-
-func (s *Server) processLoadBalancerChangeUpdate(msg pubsubx.ChangeMessage) error {
-	_ = msg.SubjectID.String()
-	return nil
-}
-
-func (s *Server) processLoadBalancerEvent(msg pubsubx.EventMessage) error {
-	switch msg.EventType {
-	case create:
-		return nil
-	case update:
-		return nil
-	case delete:
-		return nil
-	default:
-		return errUnknownEventType
-	}
+	return false, *id
 }

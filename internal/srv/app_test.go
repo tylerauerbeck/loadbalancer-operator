@@ -2,109 +2,111 @@ package srv
 
 import (
 	"context"
-	"encoding/base64"
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/gobuffalo/packr/v2/file/resolver/encoding/hex"
 	"github.com/stretchr/testify/assert"
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 
+	"go.infratographer.com/loadbalanceroperator/internal/utils"
+	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+
+	"go.infratographer.com/x/gidx"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
-
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
-
-	"go.infratographer.com/x/gidx"
 )
 
-func (suite *srvTestSuite) TestNewHelmValues() {
-	type testCase struct {
-		name        string
-		valuesPath  string
-		expectError bool
-		lb          *loadBalancer
-	}
+var (
+	dummyLBID = "loadbal-lkjasdlfkjasdf"
+)
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		suite.T().Fatal(err)
+func (suite *srvTestSuite) TestHashLBName() {
+	hash := hashLBName(dummyLBID)
+
+	assert.NotNil(suite.T(), hash)
+	assert.IsType(suite.T(), "", hash)
+
+	dec, _ := hex.DecodeString(hash)
+
+	assert.Equal(suite.T(), dummyLBID, string(dec))
+}
+
+func (suite *srvTestSuite) TestCheckNameLength() {
+	type testCase struct {
+		name   string
+		check  string
+		length int
+		expect bool
 	}
 
 	testCases := []testCase{
 		{
-			name:        "valid values path",
-			expectError: false,
-			valuesPath:  pwd + "/../../hack/ci/values.yaml",
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
+			name:   "valid helm release",
+			check:  gidx.MustNewID("loadbal").String(),
+			length: helmReleaseLength,
+			expect: true,
 		},
 		{
-			name:        "valid overrides",
-			expectError: false,
-			valuesPath:  pwd + "/../../hack/ci/values.yaml",
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
+			name:   "invalid helm release",
+			check:  hex.EncodeToString([]byte(gidx.MustNewID("loadbal"))),
+			length: helmReleaseLength,
+			expect: false,
 		},
 		{
-			name:        "missing values path",
-			expectError: true,
-			valuesPath:  "",
-			lb:          nil,
+			name:   "valid kube namespace length",
+			check:  hex.EncodeToString([]byte(gidx.MustNewID("loadbal"))),
+			length: 63,
+			expect: true,
+		},
+		{
+			name:   "invalid kube namespace length",
+			check:  hex.EncodeToString([]byte(gidx.MustNewID("loadbal"))) + hex.EncodeToString([]byte(gidx.MustNewID("loadbal"))),
+			length: 63,
+			expect: false,
 		},
 	}
 
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
-			srv := Server{
-				Logger:     zap.NewNop().Sugar(),
-				ValuesPath: tcase.valuesPath,
-			}
-			values, err := srv.newHelmValues(tcase.lb)
-			if tcase.expectError {
-				assert.NotNil(t, err)
-			} else {
-				assert.Nil(t, err)
-				assert.NotNil(t, values)
-			}
+			c := checkNameLength(tcase.check, tcase.length)
+
+			assert.Equal(t, tcase.expect, c)
 		})
 	}
 }
 
+func (suite *srvTestSuite) TestStrPt() {
+	s := "string"
+	p := strPt(s)
+
+	assert.NotNil(suite.T(), p)
+	assert.IsType(suite.T(), new(string), p)
+}
+
 func (suite *srvTestSuite) TestCreateNamespace() {
 	type testCase struct {
-		name         string
-		appNamespace string
-		expectError  bool
-		kubeclient   *rest.Config
+		name        string
+		id          gidx.PrefixedID
+		expectError bool
+		kubeclient  *rest.Config
 	}
 
 	testCases := []testCase{
 		{
-			name:         "valid yaml",
-			expectError:  false,
-			appNamespace: "flintlock",
-			kubeclient:   suite.Kubeconfig,
+			name:        "valid yaml",
+			expectError: false,
+			id:          gidx.MustNewID("loadbal"),
+			kubeclient:  suite.Kubeconfig,
 		},
 		{
-			name:         "invalid namespace",
-			expectError:  true,
-			appNamespace: "",
-			kubeclient:   suite.Kubeconfig,
-		},
-		{
-			name:         "invalid kubeclient",
-			expectError:  true,
-			appNamespace: "flintlock",
+			name:        "invalid kubeclient",
+			expectError: true,
+			id:          gidx.MustNewID("loadbal"),
 			kubeclient: &rest.Config{
 				Host:                "localhost:45678",
 				APIPath:             "",
@@ -132,14 +134,27 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
+			api := mock.DummyAPI(tcase.id.String())
+			api.Start()
+
+			defer api.Close()
+
 			srv := Server{
+				APIClient:  lbapi.NewClient(api.URL),
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
 				KubeClient: tcase.kubeclient,
 			}
 
-			hash := hashName(tcase.appNamespace)
-			ns, err := srv.CreateNamespace(tcase.appNamespace, hash)
+			subj := tcase.id
+			adds := []gidx.PrefixedID{}
+
+			lb, err := srv.newLoadBalancer(subj, adds)
+
+			assert.Nil(t, err)
+
+			hash := hashLBName(lb.loadBalancerID.String())
+			ns, err := srv.CreateNamespace(hash)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -153,16 +168,107 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 	}
 }
 
+// TODO: add test for bad binding
+// func (suite *srvTestSuite) TestCreateNamespace_BadBinding(){
+
+// }
+
+func (suite *srvTestSuite) TestRemoveNamespace() {
+	type testCase struct {
+		name        string
+		id          gidx.PrefixedID
+		expectError bool
+		kubeclient  *rest.Config
+	}
+
+	testCases := []testCase{
+		{
+			name:        "valid yaml",
+			expectError: false,
+			id:          gidx.MustNewID("loadbal"),
+			kubeclient:  suite.Kubeconfig,
+		},
+		{
+			name:        "bad kubeclient",
+			expectError: true,
+			id:          gidx.MustNewID("loadbal"),
+			kubeclient: &rest.Config{
+				Host:                "localhost:45678",
+				APIPath:             "",
+				ContentConfig:       rest.ContentConfig{},
+				Username:            "",
+				Password:            "",
+				BearerToken:         "",
+				BearerTokenFile:     "",
+				Impersonate:         rest.ImpersonationConfig{},
+				AuthProvider:        &api.AuthProviderConfig{},
+				AuthConfigPersister: nil,
+				ExecProvider:        &api.ExecConfig{},
+				TLSClientConfig:     rest.TLSClientConfig{},
+				UserAgent:           "",
+				DisableCompression:  false,
+				Transport:           nil,
+				QPS:                 0,
+				Burst:               0,
+				RateLimiter:         nil,
+				WarningHandler:      nil,
+				Timeout:             0,
+			},
+		},
+	}
+
+	for _, tcase := range testCases {
+		suite.T().Run(tcase.name, func(t *testing.T) {
+			api := mock.DummyAPI(tcase.id.String())
+			api.Start()
+
+			defer api.Close()
+
+			srv := Server{
+				APIClient:  lbapi.NewClient(api.URL),
+				Context:    context.TODO(),
+				Logger:     zap.NewNop().Sugar(),
+				KubeClient: tcase.kubeclient,
+			}
+
+			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+
+			assert.Nil(t, err)
+
+			hash := hashLBName(lb.loadBalancerID.String())
+
+			// TODO: check that namespace doesn't exist
+
+			_, _ = srv.CreateNamespace(hash)
+
+			// TODO: check that namespace does exist
+
+			err = srv.removeNamespace(hash)
+
+			// TODO: check that namespace does not exist
+
+			if tcase.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+// TODO: add test for bad namespace
+// func (suite *srvTestSuite) TestRemoveNamespace_BadNamespace() {
+
+// }
+
 func (suite *srvTestSuite) TestNewDeployment() {
 	type testCase struct {
-		name         string
-		appNamespace string
-		appName      string
-		expectError  bool
-		chart        *chart.Chart
-		kubeClient   *rest.Config
-		valPath      string
-		lb           *loadBalancer
+		name        string
+		id          gidx.PrefixedID
+		expectError bool
+		chart       *chart.Chart
+		kubeClient  *rest.Config
+		valPath     string
 	}
 
 	testDir, err := os.MkdirTemp("", "test-new-deployment")
@@ -189,38 +295,25 @@ func (suite *srvTestSuite) TestNewDeployment() {
 
 	testCases := []testCase{
 		{
-			name:         "valid yaml",
-			expectError:  false,
-			appNamespace: uuid.New().String(),
-			appName:      uuid.New().String(),
-			chart:        ch,
-			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   suite.Kubeconfig,
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
+			name:        "valid yaml",
+			expectError: false,
+			id:          gidx.MustNewID("loadbal"),
+			chart:       ch,
+			valPath:     pwd + "/../../hack/ci/values.yaml",
+			kubeClient:  suite.Kubeconfig,
 		},
 		{
-			name:         "missing values path",
-			expectError:  true,
-			appNamespace: uuid.New().String(),
-			appName:      uuid.New().String(),
-			chart:        ch,
-			valPath:      "",
-			kubeClient:   suite.Kubeconfig,
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
+			name:        "missing values path",
+			expectError: true,
+			id:          gidx.MustNewID("loadbal"),
+			chart:       ch,
+			valPath:     "",
+			kubeClient:  suite.Kubeconfig,
 		},
 		{
-			name:         "invalid chart",
-			expectError:  true,
-			appNamespace: uuid.New().String(),
-			appName:      uuid.New().String(),
+			name:        "invalid chart",
+			expectError: true,
+			id:          gidx.MustNewID("loadbal"),
 			chart: &chart.Chart{
 				Raw:       []*chart.File{},
 				Metadata:  &chart.Metadata{},
@@ -232,17 +325,18 @@ func (suite *srvTestSuite) TestNewDeployment() {
 			},
 			valPath:    pwd + "/../../hack/ci/values.yaml",
 			kubeClient: suite.Kubeconfig,
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
 		},
 	}
 
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
+			api := mock.DummyAPI(tcase.id.String())
+			api.Start()
+
+			defer api.Close()
+
 			srv := Server{
+				APIClient:  lbapi.NewClient(api.URL),
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
 				KubeClient: tcase.kubeClient,
@@ -250,9 +344,22 @@ func (suite *srvTestSuite) TestNewDeployment() {
 				Chart:      tcase.chart,
 			}
 
-			hash := hashName(tcase.appNamespace)
-			_, _ = srv.CreateNamespace(tcase.appName, hash)
-			err = srv.newDeployment(tcase.lb)
+			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+
+			assert.Nil(t, err)
+
+			hash := hashLBName(lb.loadBalancerID.String())
+
+			// TODO: check that namespace doesn't exist
+
+			_, _ = srv.CreateNamespace(hash)
+
+			// TODO: check that namespace does exist
+
+			// TODO: check that deployment doesn't exist
+			err = srv.newDeployment(lb)
+
+			// TODO: check that deployment exists
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -263,32 +370,84 @@ func (suite *srvTestSuite) TestNewDeployment() {
 	}
 }
 
-func (suite *srvTestSuite) TestNewHelmClient() {
+func (suite *srvTestSuite) TestRemoveDeployment() {
 	type testCase struct {
-		name         string
-		appNamespace string
-		kubeClient   *rest.Config
-		expectError  bool
+		name        string
+		id          gidx.PrefixedID
+		expectError bool
+		chart       *chart.Chart
+		kubeClient  *rest.Config
+		valPath     string
+	}
+
+	testDir, err := os.MkdirTemp("", "test-remove-deployment")
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+
+	defer os.RemoveAll(testDir)
+
+	chartPath, err := utils.CreateTestChart(testDir)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+
+	ch, err := loader.Load(chartPath)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		suite.T().Fatal(err)
 	}
 
 	testCases := []testCase{
 		{
-			name:         "valid client",
-			appNamespace: "launchpad",
-			kubeClient:   suite.Kubeconfig,
-			expectError:  false,
+			name:        "valid deployment",
+			expectError: false,
+			id:          gidx.MustNewID("loadbal"),
+			chart:       ch,
+			valPath:     pwd + "/../../hack/ci/values.yaml",
+			kubeClient:  suite.Kubeconfig,
 		},
 	}
 
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
+			api := mock.DummyAPI(tcase.id.String())
+			api.Start()
+
+			defer api.Close()
+
 			srv := Server{
+				APIClient:  lbapi.NewClient(api.URL),
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeClient,
+				KubeClient: suite.Kubeconfig,
+				ValuesPath: tcase.valPath,
+				Chart:      tcase.chart,
 			}
 
-			_, err := srv.newHelmClient(tcase.appNamespace)
+			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+
+			assert.Nil(t, err)
+
+			hash := hashLBName(lb.loadBalancerID.String())
+
+			// TODO: check that namespace does not exist
+
+			_, _ = srv.CreateNamespace(hash)
+
+			// TODO: check that namespace does exist
+			// TODO: check that release does not exist
+			_ = srv.newDeployment(lb)
+			// TODO: check that release does exist
+
+			err = srv.removeDeployment(lb)
+
+			// TODO: check that release does not exist
+			// tODO: check that namespace does not exist
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -338,178 +497,6 @@ func (suite *srvTestSuite) TestAttachRoleBinding() {
 			err = attachRoleBinding(srv.Context, cli, tcase.namespace)
 
 			if tcase.expectErr {
-				assert.NotNil(t, err)
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func (suite *srvTestSuite) TestRemoveNamespace() {
-	type testCase struct {
-		name         string
-		appNamespace string
-		expectError  bool
-		kubeclient   *rest.Config
-	}
-
-	testCases := []testCase{
-		{
-			name:         "valid yaml",
-			expectError:  false,
-			appNamespace: "flintlock",
-			kubeclient:   suite.Kubeconfig,
-		},
-		{
-			name:         "invalid namespace",
-			expectError:  true,
-			appNamespace: "this-does-not-exist",
-			kubeclient:   suite.Kubeconfig,
-		},
-		{
-			name:         "bad kubeclient",
-			expectError:  true,
-			appNamespace: "this-should-fail",
-			kubeclient: &rest.Config{
-				Host:                "localhost:45678",
-				APIPath:             "",
-				ContentConfig:       rest.ContentConfig{},
-				Username:            "",
-				Password:            "",
-				BearerToken:         "",
-				BearerTokenFile:     "",
-				Impersonate:         rest.ImpersonationConfig{},
-				AuthProvider:        &api.AuthProviderConfig{},
-				AuthConfigPersister: nil,
-				ExecProvider:        &api.ExecConfig{},
-				TLSClientConfig:     rest.TLSClientConfig{},
-				UserAgent:           "",
-				DisableCompression:  false,
-				Transport:           nil,
-				QPS:                 0,
-				Burst:               0,
-				RateLimiter:         nil,
-				WarningHandler:      nil,
-				Timeout:             0,
-			},
-		},
-	}
-
-	for _, tcase := range testCases {
-		suite.T().Run(tcase.name, func(t *testing.T) {
-			srv := Server{
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeclient,
-			}
-
-			hash := hashName(tcase.appNamespace)
-
-			if !tcase.expectError {
-				_, err := srv.CreateNamespace(hash, base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(tcase.appNamespace)))
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			err := srv.removeNamespace(hash)
-
-			if tcase.expectError {
-				assert.NotNil(t, err)
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func (suite *srvTestSuite) TestRemoveDeployment() {
-	type testCase struct {
-		name         string
-		appNamespace string
-		appName      string
-		expectError  bool
-		chart        *chart.Chart
-		kubeClient   *rest.Config
-		valPath      string
-		lb           *loadBalancer
-	}
-
-	testDir, err := os.MkdirTemp("", "test-remove-deployment")
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-
-	defer os.RemoveAll(testDir)
-
-	chartPath, err := utils.CreateTestChart(testDir)
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-
-	ch, err := loader.Load(chartPath)
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-
-	pwd, err := os.Getwd()
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-
-	testCases := []testCase{
-		{
-			name:         "valid deployment",
-			expectError:  false,
-			appNamespace: uuid.New().String(),
-			appName:      uuid.New().String(),
-			chart:        ch,
-			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   suite.Kubeconfig,
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
-		},
-		{
-			name:         "invalid deployment",
-			expectError:  true,
-			appNamespace: uuid.New().String(),
-			appName:      uuid.New().String(),
-			chart:        ch,
-			valPath:      pwd + "/../../hack/ci/values.yaml",
-			kubeClient:   suite.Kubeconfig,
-			lb: &loadBalancer{
-				loadBalancerID:         gidx.MustNewID("loadbal"),
-				loadBalancerTenantID:   "tnnttnt-lkjasdflkj",
-				loadBalancerLocationID: "lctnloc-lkjasdflkj",
-			},
-		},
-	}
-
-	for _, tcase := range testCases {
-		suite.T().Run(tcase.name, func(t *testing.T) {
-			srv := Server{
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: suite.Kubeconfig,
-				ValuesPath: tcase.valPath,
-				Chart:      tcase.chart,
-			}
-
-			if !tcase.expectError {
-				hash := hashName(tcase.lb.loadBalancerID.String())
-				_, _ = srv.CreateNamespace(tcase.lb.loadBalancerID.String(), hash)
-				err = srv.newDeployment(tcase.lb)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-			err = srv.removeDeployment(tcase.lb.loadBalancerID.String())
-
-			if tcase.expectError {
 				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
