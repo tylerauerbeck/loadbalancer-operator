@@ -40,23 +40,16 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- if .Values.operator.extraEnvVars }}
           env:
-            - name: LOADBALANCEROPERATOR_CHART_PATH
-              value: "/chart.tgz"
-            - name: LOADBALANCEROPERATOR_NATS_URL
-              value: "{{ .Values.operator.events.connectionURL }}"
-            - name: LOADBALANCEROPERATOR_NATS_STREAM_NAME
-              value: "{{ .Values.operator.events.queue | default "loadbalanceroperator" }}"
-            - name: LOADBALANCEROPERATOR_NATS_SUBJECT_PREFIX
-              value: "{{ .Values.operator.events.subjectPrefix }}"
-          {{- if .Values.operator.events.auth.secretName }}
-            - name: LOADBALANCEROPERATOR_NATS_CREDS_FILE
-              value: "/creds"
-          {{- end -}}
-          {{ if .Values.operator.chart.valuesPath }}
-            - name: LOADBALANCEROPERATOR_CHART_VALUES_PATH
-              value: "/lb-values.yaml"
+          {{- range .Values.operator.extraEnvVars }}
+            - name: {{ .name }}
+              value: {{ .value }}
           {{- end }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "common.names.fullname" . }}-config
           {{- if .Values.operator.securityContext }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
@@ -65,14 +58,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - process
-          {{- range .Values.operator.events.subjects }}
-            - --nats-subjects={{ . }}
+          {{- range .Values.operator.events.topics }}
+            - --event-topics={{ . }}
           {{- end }}
-          {{- range .Values.operator.chart.valuesCPUFlag }}
-            - --helm-cpu-flag={{ . }}
-          {{- end }}
-          {{- range .Values.operator.chart.valuesMemoryFlag }}
-            - --helm-memory-flag={{ . }}
+          {{- range .Values.operator.events.locations }}
+            - --event-locations={{ . }}
           {{- end }}
           ports:
             - name: hc
@@ -82,19 +72,13 @@ spec:
             httpGet:
               path: /livez
               port: hc
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: hc
           volumeMounts:
             - name: chart-config
               mountPath: /chart.tgz
               subPath: chart.tgz
-            {{- if ne .Values.operator.chart.valuesPathKey "" }}
             - name: chart-config
               mountPath: /lb-values.yaml
               subPath: values.yaml
-            {{- end }}
             {{- if .Values.operator.events.auth.secretName  }}
             - name: events-creds
               mountPath: /creds
@@ -115,20 +99,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-      {{- if ne .Values.operator.chart.valuesPath "" }}
-        - name: chart-values-path
-          configMap:
-            name: "{{ .Values.operator.chart.configMapName }}"
-            items:
-              - key: values.yaml
-                path: values.yaml
-      {{- end }}
-        - name: chart-path
-          configMap:
-            name: "{{ .Values.operator.chart.configMapName }}"
-            items:
-              - key: chart.yaml
-                path: chart.yaml
         {{- if .Values.operator.events.auth.secretName  }}
         - name: events-creds
           secret:
@@ -136,6 +106,6 @@ spec:
         {{- end }}
         - name: chart-config
           configMap:
-            name: "{{ .Values.operator.chart.configMapName }}"
+            name: "{{ include "common.names.fullname" . }}-lb-chart"
             
 

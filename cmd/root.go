@@ -9,7 +9,6 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"go.infratographer.com/loadbalanceroperator/internal/config"
-	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/viperx"
 	"go.uber.org/zap"
@@ -50,7 +49,6 @@ func init() {
 	viperx.MustBindFlag(viper.GetViper(), "healthcheck-port", rootCmd.PersistentFlags().Lookup("healthcheck-port"))
 
 	events.MustViperFlagsForSubscriber(viper.GetViper(), processCmd.Flags())
-	echojwtx.MustViperFlags(viper.GetViper(), processCmd.Flags())
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

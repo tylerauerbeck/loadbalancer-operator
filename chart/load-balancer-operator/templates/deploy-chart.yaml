@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-lb-chart
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  values.yaml: |
+{{ toYaml .Values.operator.chart.chartValues | indent 4}}
+binaryData:
+  chart.tgz: {{ .Values.operator.chart.chartBinaryData }}

@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/infratographer/load-balancer-operator
   pullPolicy: IfNotPresent
-  tag: "v0.0.3"
+  tag: "v0.1.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -24,38 +24,32 @@ service:
 operator:
   healthCheckPort: "8080"
   replicas: 1
-  extraLabels: {}
-  extraAnnotations: {}
-  extraEnvVars: {}
+  extraLabels: []
+  extraAnnotations: []
+  extraEnvVars: []
+  #    - name: LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_NATS_CREDSFILE
+  #      value: "/creds"
   resources: {}
   podSecurityContext: {}
   securityContext: {}
+  api:
+    endpoint: "https://localhost:7608/query"
+    oidc:
+      enabled: false
   chart:
-    configMapName: "lb-chart"
-    chartPath: "/chart.tgz"
-    valuesPath: "/events-creds"
-    valuesMemoryFlag:
-      - resources.limits.memory
-      - resources.requests.memory
-    valuesCPUFlag:
-      - resources.limits.cpu
-      - resources.requests.cpu
+    chartValues: ""
+    chartBinaryData: ""
   events:
-    connectionURL: "my-events-cluster.example.com:4222"
+    queueGroup: "my-queue-group"
+    connectionURL: "nats://my-events-cluster.example.com:4222"
     auth:
-      secretName: "events-creds"
+      secretName: ""
       credsPath: "/creds"
-    subjectPrefix: "com.infratographer"
-    subjects:
+    topicPrefix: "com.infratographer"
+    topics:
       - "changes.*.lb"
       - "events.create.port"
-    queue: "my-queue"
-  # these will be overwritten by the operator but are provided here for reference
-  managed:
-    loadBalancerID: ""
-    loadBalancerTenantID: ""
-    loadBalancerLocationID: ""
-
+    locations: []
 
 reloader:
   enabled: false

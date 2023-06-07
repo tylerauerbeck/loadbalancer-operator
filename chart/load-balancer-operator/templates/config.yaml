@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-config
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_PREFIX: "{{ .Values.operator.events.topicPrefix }}"
+  LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_URL: "{{ .Values.operator.events.connectionURL }}"
+  LOADBALANCEROPERATOR_EVENTS_QUEUEGROUP: "{{ .Values.operator.events.queueGroup }}"
+  LOADBALANCEROPERATOR_API_ENDPOINT: "{{ .Values.operator.api.endpoint }}"
+  LOADBALANCEROPERATOR_CHART_PATH: "/chart.tgz"
+  LOADBALANCEROPERATOR_CHART_VALUE_PATH: "/lb-values.yaml"
