@@ -8,12 +8,13 @@ import (
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"go.infratographer.com/loadbalanceroperator/internal/config"
-	"go.infratographer.com/x/events"
-	"go.infratographer.com/x/viperx"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
-	"github.com/spf13/viper"
+	"go.infratographer.com/loadbalanceroperator/internal/config"
+
+	"go.infratographer.com/x/events"
+	"go.infratographer.com/x/viperx"
 )
 
 var (
