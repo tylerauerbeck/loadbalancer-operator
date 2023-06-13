@@ -692,6 +692,8 @@ go.etcd.io/etcd/client/pkg/v3 v3.5.0/go.mod h1:IJHfcCEKxYu1Os13ZdwCwIUTUVGYTSAM3
 go.etcd.io/etcd/client/v2 v2.305.0/go.mod h1:h9puh54ZTgAKtEbut2oe9P4L/oqKCVB6xsXlzd7alYQ=
 go.infratographer.com/loadbalancer-manager-haproxy v0.0.0-20230524022050-2d83ce4fef64 h1:GoY2TzlKH/ZXmkqX7cLx9St+cuqg09pggcOvDXEFwME=
 go.infratographer.com/loadbalancer-manager-haproxy v0.0.0-20230524022050-2d83ce4fef64/go.mod h1:4Di7Vzg55I2/RH9P4B4Y63Muuxl0CNTsiCrwIu3UzCs=
+go.infratographer.com/loadbalancer-manager-haproxy v0.0.0-20230612145135-7bf6c8074a9e h1:1tpVzkkoP+HKC6AjLKWvm6Z25rYqeIN/Lh2dorQNWx0=
+go.infratographer.com/loadbalancer-manager-haproxy v0.0.0-20230612145135-7bf6c8074a9e/go.mod h1:mrwcbc0ljw0up+sX+umoa1FydiqSeMiynlR6QIO9dqU=
 go.infratographer.com/x v0.3.1-0.20230605180922-67c1a1e705ac h1:5PFHsIXYJqF6ALLA39JicYzkSeLOgeF1zg3Vr68GZm8=
 go.infratographer.com/x v0.3.1-0.20230605180922-67c1a1e705ac/go.mod h1:GvOhGwi/1Dp5qAQSudHUdLfFmiXzzc27KBfkH0nxnEQ=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=

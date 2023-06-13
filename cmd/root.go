@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
+	"go.infratographer.com/loadbalancer-manager-haproxy/x/oauth2x"
 	"go.infratographer.com/loadbalanceroperator/internal/config"
 
 	"go.infratographer.com/x/events"
@@ -50,6 +51,7 @@ func init() {
 	viperx.MustBindFlag(viper.GetViper(), "healthcheck-port", rootCmd.PersistentFlags().Lookup("healthcheck-port"))
 
 	events.MustViperFlagsForSubscriber(viper.GetViper(), processCmd.Flags())
+	oauth2x.MustViperFlags(viper.GetViper(), rootCmd.Flags())
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

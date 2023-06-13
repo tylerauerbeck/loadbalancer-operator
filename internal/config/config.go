@@ -2,6 +2,8 @@
 package config
 
 import (
+	"go.infratographer.com/loadbalancer-manager-haproxy/x/oauth2x"
+
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/loggingx"
@@ -14,6 +16,7 @@ var AppConfig struct {
 	Events  EventsConfig
 	Server  echox.Config
 	Tracing otelx.Config
+	OIDC    oauth2x.Config
 }
 
 // EventsConfig stores the configuration for a load-balancer-api events config
