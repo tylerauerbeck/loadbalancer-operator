@@ -61,6 +61,12 @@ func init() {
 	processCmd.PersistentFlags().String("kube-config-path", "", "path to a valid kubeconfig file")
 	viperx.MustBindFlag(viper.GetViper(), "kube-config-path", processCmd.PersistentFlags().Lookup("kube-config-path"))
 
+	processCmd.PersistentFlags().String("helm-containerport-key", "containerPorts", "key to use for injecting port values for deployment into chart")
+	viperx.MustBindFlag(viper.GetViper(), "helm-containerport-key", processCmd.PersistentFlags().Lookup("helm-containerport-key"))
+
+	processCmd.PersistentFlags().String("helm-serviceport-key", "service.ports", "key to use for injecting port values for service into chart")
+	viperx.MustBindFlag(viper.GetViper(), "helm-serviceport-key", processCmd.PersistentFlags().Lookup("helm-serviceport-key"))
+
 	rootCmd.AddCommand(processCmd)
 }
 

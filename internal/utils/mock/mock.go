@@ -20,12 +20,16 @@ func DummyAPI(id string) *httptest.Server {
 					"edges": [
 					  {
 						"node": {
-						  "id": "loadprt-2fiP_C_gnAORx_oDbNJAf"
+						  "id": "loadprt-2fiP_C_gnAORx_oDbNJAf",
+						  "name": "http",
+						  "number": 80
 						}
 					  },
 					  {
 						"node": {
-						  "id": "loadprt-Ox62077uY1igHFU1MIvyl"
+						  "id": "loadprt-Ox62077uY1igHFU1MIvyl",
+						  "name": "https",
+						  "number": 443
 						}
 					  }
 					]

@@ -182,12 +182,39 @@ func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 }
 
 func (suite srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
-	srv := &Server{}
-	lb := &loadBalancer{
-		loadBalancerID: gidx.MustNewID("loadbal"),
+	dir, cp, ch, pwd := utils.CreateWorkspace("test-delete-lb")
+	defer os.RemoveAll(dir)
+
+	eSrv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
+
+	require.NoError(suite.T(), err, "unexpected error creating new server")
+
+	api := mock.DummyAPI(dummyLB.String())
+	api.Start()
+
+	defer api.Close()
+
+	srv := Server{
+		APIClient:  lbapi.NewClient(api.URL),
+		KubeClient: suite.Kubeenv.Config,
+		Echo:       eSrv,
+		Context:    context.TODO(),
+		Logger:     zap.NewNop().Sugar(),
+		Chart:      ch,
+		Debug:      false,
+		Topics:     []string{"foo", "bar"},
+		ChartPath:  cp,
+		ValuesPath: pwd + "/../../hack/ci/values.yaml",
 	}
+
+	id := gidx.MustNewID("loadbal")
+	lb, _ := srv.newLoadBalancer(id, nil)
+
+	err = srv.processLoadBalancerChangeCreate(lb)
+
+	assert.NoError(suite.T(), err)
 
 	u := srv.processLoadBalancerChangeUpdate(lb)
 
-	assert.Nil(suite.T(), u)
+	assert.NoError(suite.T(), u)
 }

@@ -17,5 +17,9 @@ func (s *Server) processLoadBalancerChangeDelete(lb *loadBalancer) error {
 }
 
 func (s *Server) processLoadBalancerChangeUpdate(lb *loadBalancer) error {
+	if err := s.updateDeployment(lb); err != nil {
+		return err
+	}
+
 	return nil
 }

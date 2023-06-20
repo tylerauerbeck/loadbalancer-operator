@@ -151,6 +151,40 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 	return nil
 }
 
+func (s *Server) updateDeployment(lb *loadBalancer) error {
+	hash := hashLBName(lb.loadBalancerID.String())
+
+	releaseName := fmt.Sprintf("lb-%s", hash)
+	if !checkNameLength(releaseName, helmReleaseLength) {
+		releaseName = releaseName[0:helmReleaseLength]
+	}
+
+	values, err := s.newHelmValues(lb)
+	if err != nil {
+		s.Logger.Errorw("unable to prepare chart values", "error", err)
+		return err
+	}
+
+	client, err := s.newHelmClient(hash)
+	if err != nil {
+		s.Logger.Errorw("unable to initialize helm client", "error", err)
+		return err
+	}
+
+	hc := action.NewUpgrade(client)
+	hc.Namespace = hash
+	_, err = hc.Run(releaseName, s.Chart, values)
+
+	if err != nil {
+		s.Logger.Errorw("unable to upgrade loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName)
+		return err
+	}
+
+	s.Logger.Infow("loadbalancer upgraded successfully", "namespace", hash, "releaseName", releaseName)
+
+	return nil
+}
+
 func (s *Server) removeDeployment(lb *loadBalancer) error {
 	hash := hashLBName(lb.loadBalancerID.String())
 

@@ -28,6 +28,8 @@ type Server struct {
 	ChartPath        string
 	ValuesPath       string
 	Locations        []string
+	ServicePortKey   string
+	ContainerPortKey string
 }
 
 // Run will start the server queue connections and healthcheck endpoints

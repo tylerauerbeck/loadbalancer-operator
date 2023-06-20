@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
 	"go.infratographer.com/x/gidx"
 	"go.uber.org/zap"
 
@@ -20,9 +22,21 @@ var (
 )
 
 func (suite *srvTestSuite) TestGenerateLBHelmVals() {
-	lb := &loadBalancer{
-		loadBalancerID: gidx.MustNewID("loadbal"),
+	id := gidx.MustNewID("loadbal")
+	api := mock.DummyAPI(id.String())
+	api.Start()
+
+	defer api.Close()
+
+	s := &Server{
+		Context:          context.TODO(),
+		APIClient:        lbapi.NewClient(api.URL),
+		ContainerPortKey: "containerPorts",
+		ServicePortKey:   "service.ports",
+		Logger:           zap.NewNop().Sugar(),
 	}
+
+	lb, _ := s.newLoadBalancer(id, nil)
 
 	hash := hex.EncodeToString([]byte(lb.loadBalancerID.String()))
 
@@ -30,25 +44,26 @@ func (suite *srvTestSuite) TestGenerateLBHelmVals() {
 
 	assert.Nil(suite.T(), opts.StringValues)
 
-	opts.generateLBHelmVals(lb)
+	opts.generateLBHelmVals(lb, s)
 
 	assert.NotNil(suite.T(), opts.StringValues)
-	assert.Len(suite.T(), opts.StringValues, 2)
 	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".loadBalancerID="+lb.loadBalancerID.String())
 	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".loadBalancerIDEnc="+hash)
+
+	assert.NotNil(suite.T(), opts.JSONValues)
 }
 
-func (suite *srvTestSuite) TestAddValue() { //nolint:stylecheck
-	opts := helmvalues{&values.Options{}}
+// func (suite *srvTestSuite) TestAddValue() { //nolint:stylecheck
+// 	opts := helmvalues{&values.Options{}}
 
-	assert.Nil(suite.T(), opts.StringValues)
+// 	assert.Nil(suite.T(), opts.StringValues)
 
-	opts.addValue(dummyKey, dummyVal)
+// 	opts.addValue(dummyKey, dummyVal)
 
-	assert.NotNil(suite.T(), opts.StringValues)
-	assert.Len(suite.T(), opts.StringValues, 1)
-	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+"."+dummyKey+"="+dummyVal)
-}
+// 	assert.NotNil(suite.T(), opts.StringValues)
+// 	assert.Len(suite.T(), opts.StringValues, 1)
+// 	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+"."+dummyKey+"="+dummyVal)
+// }
 
 func (suite *srvTestSuite) TestNewHelmValues() {
 	type testCase struct {
@@ -62,6 +77,12 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 	if err != nil {
 		suite.T().Fatal(err)
 	}
+
+	id := gidx.MustNewID("loadbal")
+	api := mock.DummyAPI(id.String())
+	api.Start()
+
+	defer api.Close()
 
 	testCases := []testCase{
 		{
@@ -93,10 +114,17 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
-				Logger:     zap.NewNop().Sugar(),
-				ValuesPath: tcase.valuesPath,
+				Context:          context.TODO(),
+				APIClient:        lbapi.NewClient(api.URL),
+				Logger:           zap.NewNop().Sugar(),
+				ValuesPath:       tcase.valuesPath,
+				ContainerPortKey: "containerPorts",
+				ServicePortKey:   "service.ports",
 			}
-			values, err := srv.newHelmValues(tcase.lb)
+
+			lb, _ := srv.newLoadBalancer(tcase.lb.loadBalancerID, nil)
+
+			values, err := srv.newHelmValues(lb)
 			if tcase.expectError {
 				assert.NotNil(t, err)
 			} else {

@@ -2,6 +2,7 @@ package srv
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -21,16 +22,40 @@ const (
 	managedHelmKeyPrefix = "operator.managed"
 )
 
-func (v helmvalues) generateLBHelmVals(lb *loadBalancer) {
+func (v helmvalues) generateLBHelmVals(lb *loadBalancer, s *Server) {
 	// add loadbalancer id values
-	v.addValue("loadBalancerID", lb.loadBalancerID.String())
-	v.addValue("loadBalancerIDEnc", hex.EncodeToString([]byte(lb.loadBalancerID.String())))
+	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".loadBalancerID", lb.loadBalancerID.String()))
+	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".loadBalancerIDEnc", hex.EncodeToString([]byte(lb.loadBalancerID.String()))))
+
+	// add port values
+	var cport, sport []interface{}
+
+	for _, port := range lb.lbData.LoadBalancer.Ports.Edges {
+		cport = append(cport, map[string]interface{}{"name": port.Node.Name, "containerPort": port.Node.Number})
+		sport = append(sport, map[string]interface{}{"name": port.Node.Name, "port": port.Node.Number})
+	}
+
+	if cport != nil {
+		if cports, err := json.Marshal(cport); err != nil {
+			s.Logger.Debugw("unable to marshal container ports", "error", err, "loadbalancer", lb.loadBalancerID.String())
+		} else {
+			v.JSONValues = append(v.JSONValues, fmt.Sprintf("%s=%s", s.ContainerPortKey, string(cports)))
+		}
+	}
+
+	if sport != nil {
+		if sports, err := json.Marshal(sport); err != nil {
+			s.Logger.Debugw("unable to marshal service ports", "error", err, "loadbalancer", lb.loadBalancerID.String())
+		} else {
+			v.JSONValues = append(v.JSONValues, fmt.Sprintf("%s=%s", s.ServicePortKey, string(sports)))
+		}
+	}
 }
 
-func (v helmvalues) addValue(key string, value interface{}) {
-	val := fmt.Sprintf("%s.%s=%s", managedHelmKeyPrefix, key, value)
-	v.StringValues = append(v.StringValues, val)
-}
+// func (v helmvalues) addValue(key string, value interface{}) {
+// 	val := fmt.Sprintf("%s.%s=%s", managedHelmKeyPrefix, key, value)
+// 	v.StringValues = append(v.StringValues, val)
+// }
 
 func (s *Server) newHelmClient(namespace string) (*action.Configuration, error) {
 	config := &action.Configuration{}
@@ -56,7 +81,7 @@ func (s *Server) newHelmValues(lb *loadBalancer) (map[string]interface{}, error)
 		ValueFiles: []string{s.ValuesPath},
 	}}
 
-	opts.generateLBHelmVals(lb)
+	opts.generateLBHelmVals(lb, s)
 
 	values, err := opts.MergeValues(provider)
 	if err != nil {
