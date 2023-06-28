@@ -26,6 +26,7 @@ operator:
   replicas: 1
   extraLabels: []
   extraAnnotations: []
+  extraEnvFrom: {}
   extraEnvVars: []
   #    - name: LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_NATS_CREDSFILE
   #      value: "/creds"
