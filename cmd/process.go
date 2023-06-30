@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"go.infratographer.com/ipam-api/pkg/ipamclient"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/loadbalancer-manager-haproxy/x/oauth2x"
 	"go.infratographer.com/x/echox"
@@ -43,8 +44,14 @@ func init() {
 	// only available as a CLI arg because it shouldn't be something that could accidentially end up in a config file or env var
 	processCmd.Flags().BoolVar(&processDevMode, "dev", false, "dev mode: disables all auth checks, pretty logging, etc.")
 
-	processCmd.PersistentFlags().String("api-endpoint", "http://localhost:7608", "endpoint for load balancer API")
+	processCmd.PersistentFlags().String("api-endpoint", "http://localhost:7608", "endpoint for load balancer API. defaults to supergraph if set")
 	viperx.MustBindFlag(viper.GetViper(), "api-endpoint", processCmd.PersistentFlags().Lookup("api-endpoint"))
+
+	processCmd.PersistentFlags().String("ipam-endpoint", "http://localhost:7905", "endpoint for ipam API. defaults to supergraph if set.")
+	viperx.MustBindFlag(viper.GetViper(), "ipam-endpoint", processCmd.PersistentFlags().Lookup("ipam-endpoint"))
+
+	processCmd.PersistentFlags().String("supergraph-endpoint", "", "endpoint for supergraph gateway")
+	viperx.MustBindFlag(viper.GetViper(), "supergraph-endpoint", processCmd.PersistentFlags().Lookup("supergraph-endpoint"))
 
 	processCmd.PersistentFlags().String("chart-path", "", "path that contains deployment chart")
 	viperx.MustBindFlag(viper.GetViper(), "chart-path", processCmd.PersistentFlags().Lookup("chart-path"))
@@ -54,6 +61,9 @@ func init() {
 
 	processCmd.PersistentFlags().StringSlice("event-locations", nil, "location id(s) to filter events for")
 	viperx.MustBindFlag(viper.GetViper(), "event-locations", processCmd.PersistentFlags().Lookup("event-locations"))
+
+	processCmd.PersistentFlags().StringSlice("change-topics", nil, "change topics to subscribe to")
+	viperx.MustBindFlag(viper.GetViper(), "change-topics", processCmd.PersistentFlags().Lookup("change-topics"))
 
 	processCmd.PersistentFlags().StringSlice("event-topics", nil, "event topics to subscribe to")
 	viperx.MustBindFlag(viper.GetViper(), "event-topics", processCmd.PersistentFlags().Lookup("event-topics"))
@@ -108,7 +118,8 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		Debug:            viper.GetBool("logging.debug"),
 		KubeClient:       client,
 		Logger:           logger,
-		Topics:           viper.GetStringSlice("event-topics"),
+		EventTopics:      viper.GetStringSlice("event-topics"),
+		ChangeTopics:     viper.GetStringSlice("change-topics"),
 		SubscriberConfig: config.AppConfig.Events.Subscriber,
 		ValuesPath:       viper.GetString("chart-values-path"),
 		Locations:        viper.GetStringSlice("event-locations"),
@@ -117,11 +128,15 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	// init lbapi client
 	if config.AppConfig.OIDC.ClientID != "" {
 		oauthHTTPClient := oauth2x.NewClient(ctx, oauth2x.NewClientCredentialsTokenSrc(ctx, config.AppConfig.OIDC))
-		server.APIClient = lbapi.NewClient(viper.GetString("api-endpoint"),
+		server.APIClient = lbapi.NewClient(determineEndpoint(viper.GetString("api-endpoint"), viper.GetString("supergraph-endpoint")),
 			lbapi.WithHTTPClient(oauthHTTPClient),
 		)
+		server.IPAMClient = ipamclient.NewClient(determineEndpoint(viper.GetString("ipam-endpoint"), viper.GetString("supergraph-endpoint")),
+			ipamclient.WithHTTPClient(oauthHTTPClient),
+		)
 	} else {
-		server.APIClient = lbapi.NewClient(viper.GetString("api-endpoint"))
+		server.APIClient = lbapi.NewClient(determineEndpoint(viper.GetString("api-endpoint"), viper.GetString("supergraph-endpoint")))
+		server.IPAMClient = ipamclient.NewClient(determineEndpoint(viper.GetString("ipam-endpoint"), viper.GetString("supergraph-endpoint")))
 	}
 
 	if err := server.Run(cx); err != nil {
@@ -177,4 +192,12 @@ func loadHelmChart(chartPath string) (*chart.Chart, error) {
 	}
 
 	return chart, nil
+}
+
+func determineEndpoint(endpoint string, supergraph string) string {
+	if supergraph != "" {
+		return supergraph
+	}
+
+	return endpoint
 }

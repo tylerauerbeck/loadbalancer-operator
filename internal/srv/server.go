@@ -10,11 +10,14 @@ import (
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
+
+	"go.infratographer.com/ipam-api/pkg/ipamclient"
 )
 
 // Server holds options for server connectivity and settings
 type Server struct {
 	APIClient        *lbapi.Client
+	IPAMClient       *ipamclient.Client
 	Echo             *echox.Server
 	Context          context.Context
 	eventChannels    []<-chan *message.Message
@@ -23,7 +26,8 @@ type Server struct {
 	KubeClient       *rest.Config
 	SubscriberConfig events.SubscriberConfig
 	Debug            bool
-	Topics           []string
+	EventTopics      []string
+	ChangeTopics     []string
 	Chart            *chart.Chart
 	ChartPath        string
 	ValuesPath       string
@@ -63,8 +67,8 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) configureSubscribers() error {
 	var ev, ch []<-chan *message.Message
 
-	for _, topic := range s.Topics {
-		s.Logger.Debugw("subscribing to topic", "topic", topic)
+	for _, topic := range s.ChangeTopics {
+		s.Logger.Debugw("subscribing to change topic", "topic", topic)
 
 		csub, err := events.NewSubscriber(s.SubscriberConfig)
 		if err != nil {
@@ -79,6 +83,10 @@ func (s *Server) configureSubscribers() error {
 		}
 
 		ch = append(ch, c)
+	}
+
+	for _, topic := range s.EventTopics {
+		s.Logger.Debugw("subscribing to event topic", "topic", topic)
 
 		esub, err := events.NewSubscriber(s.SubscriberConfig)
 		if err != nil {

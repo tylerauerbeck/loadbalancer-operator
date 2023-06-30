@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"go.infratographer.com/loadbalancer-manager-haproxy/x/oauth2x"
+
 	"go.infratographer.com/loadbalanceroperator/internal/config"
 
 	"go.infratographer.com/x/events"

@@ -19,7 +19,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
-func (s *srvTestSuite) TestLocationCheck() { //nolint:govet
+func (suite *srvTestSuite) TestLocationCheck() { //nolint:govet
 	lb, _ := gidx.Parse("testloc-abcd1234")
 
 	srv := Server{
@@ -27,14 +27,14 @@ func (s *srvTestSuite) TestLocationCheck() { //nolint:govet
 	}
 
 	check := srv.locationCheck(lb)
-	assert.Equal(s.T(), true, check)
+	assert.Equal(suite.T(), true, check)
 
 	lb, _ = gidx.Parse("testloc-efgh5678")
 	check = srv.locationCheck(lb)
-	assert.Equal(s.T(), false, check)
+	assert.Equal(suite.T(), false, check)
 }
 
-func (s srvTestSuite) TestProcessChange() { //nolint:govet
+func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 	id := gidx.MustNewID("loadbal")
 
 	api := mock.DummyAPI(id.String())
@@ -44,24 +44,24 @@ func (s srvTestSuite) TestProcessChange() { //nolint:govet
 
 	testDir, err := os.MkdirTemp("", "test-process-change")
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	defer os.RemoveAll(testDir)
 
 	chartPath, err := utils.CreateTestChart(testDir)
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	ch, err := loader.Load(chartPath)
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	loc, _ := gidx.Parse("testloc-abcd1234")
@@ -71,9 +71,9 @@ func (s srvTestSuite) TestProcessChange() { //nolint:govet
 		Echo:             eSrv,
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
-		KubeClient:       s.Kubeconfig,
-		SubscriberConfig: s.SubConfig,
-		Topics:           []string{"*.load-balancer"},
+		KubeClient:       suite.Kubeconfig,
+		SubscriberConfig: suite.SubConfig,
+		ChangeTopics:     []string{"*.load-balancer"},
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
@@ -83,7 +83,7 @@ func (s srvTestSuite) TestProcessChange() { //nolint:govet
 	// TODO: check that release does not exist
 
 	// publish a message to the change channel
-	pub := s.PubConfig
+	pub := suite.PubConfig
 	p, _ := events.NewPublisher(pub)
 	_ = p.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.CreateChangeType),
@@ -123,7 +123,7 @@ func (s srvTestSuite) TestProcessChange() { //nolint:govet
 }
 
 // TODO: add more extensive tests once we start processing event messages
-func (s srvTestSuite) TestProcessEvent() { //nolint:govet
+func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 	id := gidx.MustNewID("loadbal")
 
 	api := mock.DummyAPI(id.String())
@@ -133,24 +133,24 @@ func (s srvTestSuite) TestProcessEvent() { //nolint:govet
 
 	testDir, err := os.MkdirTemp("", "test-process-event")
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	defer os.RemoveAll(testDir)
 
 	chartPath, err := utils.CreateTestChart(testDir)
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	ch, err := loader.Load(chartPath)
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		s.T().Fatal(err)
+		suite.T().Fatal(err)
 	}
 
 	loc, _ := gidx.Parse("testloc-abcd1234")
@@ -160,15 +160,15 @@ func (s srvTestSuite) TestProcessEvent() { //nolint:govet
 		Echo:             eSrv,
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
-		KubeClient:       s.Kubeconfig,
-		SubscriberConfig: s.SubConfig,
-		Topics:           []string{"*.load-balancer-event"},
+		KubeClient:       suite.Kubeconfig,
+		SubscriberConfig: suite.SubConfig,
+		EventTopics:      []string{"*.load-balancer-event"},
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
 	}
 
-	pub := s.PubConfig
+	pub := suite.PubConfig
 	p, _ := events.NewPublisher(pub)
 	_ = p.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
 		EventType:            "create",

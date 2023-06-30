@@ -38,12 +38,15 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 
 			if lb.lbType != typeNoLB {
 				switch {
-				case m.EventType == "create" && lb.lbType == typeLB:
-					s.Logger.Debugw("stub for creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
-				case m.EventType == "delete" && lb.lbType == typeLB:
-					s.Logger.Debugw("stub for deleting loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+				case m.EventType == "ip-address.assigned" || m.EventType == "ip-address.unassigned":
+					s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+
+					if err := s.updateDeployment(lb); err != nil {
+						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.UUID, "loadbalancer", lb.loadBalancerID.String())
+						msg.Nack()
+					}
 				default:
-					s.Logger.Debugw("stub for updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+					s.Logger.Debugw("unknown event", "loadbalancer", lb.loadBalancerID.String(), "event", m.EventType)
 				}
 			}
 		}

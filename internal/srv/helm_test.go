@@ -7,19 +7,22 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+
 	"go.infratographer.com/x/gidx"
 	"go.uber.org/zap"
 
 	"helm.sh/helm/v3/pkg/cli/values"
 	"k8s.io/client-go/rest"
+
+	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
 )
 
-var (
-	dummyKey = "hello"
-	dummyVal = "world"
-)
+// var (
+// 	dummyKey = "hello"
+// 	dummyVal = "world"
+// )
 
 func (suite *srvTestSuite) TestGenerateLBHelmVals() {
 	id := gidx.MustNewID("loadbal")

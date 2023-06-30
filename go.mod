@@ -5,6 +5,7 @@ go 1.20
 replace (
 	github.com/docker/cli => github.com/docker/cli v20.10.19+incompatible
 	github.com/docker/docker => github.com/docker/docker v20.10.19+incompatible
+	go.infratographer.com/loadbalancer-manager-haproxy => github.com/rizzza/loadbalancer-manager-haproxy v0.0.0-20230630055013-55ea81ee1bf3
 	oras.land/oras-go => oras.land/oras-go v1.2.2
 )
 
@@ -16,7 +17,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
-	go.infratographer.com/x v0.3.1-0.20230605180922-67c1a1e705ac
+	go.infratographer.com/x v0.3.2
 	go.uber.org/zap v1.24.0
 	helm.sh/helm/v3 v3.12.0
 	k8s.io/apimachinery v0.27.1
@@ -39,7 +40,7 @@ require (
 	github.com/containerd/containerd v1.7.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v20.10.21+incompatible // indirect
+	github.com/docker/cli v23.0.6+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v23.0.6+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
@@ -128,7 +129,7 @@ require (
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
@@ -160,13 +161,20 @@ require (
 require (
 	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/labstack/echo/v4 v4.10.2
+	go.infratographer.com/ipam-api v0.0.3-0.20230627135853-8acda8f15bbe
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	sigs.k8s.io/controller-runtime v0.14.5
 )
 
 require (
+	github.com/3th1nk/cidr v0.2.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.1 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
+	github.com/google/renameio v1.0.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0 // indirect
+	github.com/haproxytech/config-parser/v4 v4.1.0 // indirect
+	github.com/haproxytech/go-logger v1.1.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
@@ -201,7 +209,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	go.infratographer.com/loadbalancer-manager-haproxy v0.0.0-20230612145135-7bf6c8074a9e
+	go.infratographer.com/loadbalancer-manager-haproxy v0.0.2-0.20230629152456-127f95ada7fc
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.42.0 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect

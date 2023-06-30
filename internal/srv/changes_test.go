@@ -20,7 +20,7 @@ import (
 	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
 )
 
-func (suite srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:govet
+func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:govet
 	type testCase struct {
 		name           string
 		msg            pubsubx.ChangeMessage
@@ -42,14 +42,14 @@ func (suite srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:govet
 	require.NoError(suite.T(), err, "unexpected error creating new server")
 
 	srv := Server{
-		APIClient:  lbapi.NewClient(api.URL),
-		Echo:       eSrv,
-		Context:    context.TODO(),
-		Logger:     zap.NewNop().Sugar(),
-		Debug:      false,
-		Topics:     []string{"foo", "bar"},
-		ChartPath:  cp,
-		ValuesPath: pwd + "/../../hack/ci/values.yaml",
+		APIClient:    lbapi.NewClient(api.URL),
+		Echo:         eSrv,
+		Context:      context.TODO(),
+		Logger:       zap.NewNop().Sugar(),
+		Debug:        false,
+		ChangeTopics: []string{"foo", "bar"},
+		ChartPath:    cp,
+		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
 	}
 
 	testCases := []testCase{
@@ -97,7 +97,7 @@ func (suite srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:govet
 	}
 }
 
-func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
+func (suite *srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 	type testCase struct {
 		name        string
 		msg         pubsubx.ChangeMessage
@@ -119,14 +119,14 @@ func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 	defer api.Close()
 
 	srv := Server{
-		APIClient:  lbapi.NewClient(api.URL),
-		Echo:       eSrv,
-		Context:    context.TODO(),
-		Logger:     zap.NewNop().Sugar(),
-		Debug:      false,
-		Topics:     []string{"foo", "bar"},
-		ChartPath:  cp,
-		ValuesPath: pwd + "/../../hack/ci/values.yaml",
+		APIClient:    lbapi.NewClient(api.URL),
+		Echo:         eSrv,
+		Context:      context.TODO(),
+		Logger:       zap.NewNop().Sugar(),
+		Debug:        false,
+		ChangeTopics: []string{"foo", "bar"},
+		ChartPath:    cp,
+		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
 	}
 
 	testCases := []testCase{
@@ -181,7 +181,7 @@ func (suite srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 	}
 }
 
-func (suite srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
+func (suite *srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
 	dir, cp, ch, pwd := utils.CreateWorkspace("test-delete-lb")
 	defer os.RemoveAll(dir)
 
@@ -195,16 +195,16 @@ func (suite srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
 	defer api.Close()
 
 	srv := Server{
-		APIClient:  lbapi.NewClient(api.URL),
-		KubeClient: suite.Kubeenv.Config,
-		Echo:       eSrv,
-		Context:    context.TODO(),
-		Logger:     zap.NewNop().Sugar(),
-		Chart:      ch,
-		Debug:      false,
-		Topics:     []string{"foo", "bar"},
-		ChartPath:  cp,
-		ValuesPath: pwd + "/../../hack/ci/values.yaml",
+		APIClient:    lbapi.NewClient(api.URL),
+		KubeClient:   suite.Kubeenv.Config,
+		Echo:         eSrv,
+		Context:      context.TODO(),
+		Logger:       zap.NewNop().Sugar(),
+		Chart:        ch,
+		Debug:        false,
+		ChangeTopics: []string{"foo", "bar"},
+		ChartPath:    cp,
+		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
 	}
 
 	id := gidx.MustNewID("loadbal")

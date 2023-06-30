@@ -58,14 +58,14 @@ type OperatorTestSuite struct {
 }
 
 func (suite *OperatorTestSuite) SetupSuite() {
-	pub, sub, err := eventtools.NewNatsServer()
+	nats, err := eventtools.NewNatsServer()
 	if err != nil {
 		panic(err)
 	}
 
-	suite.PubConfig = pub
+	suite.PubConfig = nats.PublisherConfig
 
-	suite.SubConfig = sub
+	suite.SubConfig = nats.SubscriberConfig
 
 	env, cfg := StartKube()
 	suite.Kubeenv = env

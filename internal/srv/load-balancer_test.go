@@ -18,7 +18,7 @@ var (
 	dummyLB = gidx.MustNewID("loadbal")
 )
 
-func (s srvTestSuite) TestGetLBFromAddSubjs() { //nolint:govet
+func (suite *srvTestSuite) TestGetLBFromAddSubjs() { //nolint:govet
 	type testCase struct {
 		name   string
 		adds   []gidx.PrefixedID
@@ -48,7 +48,7 @@ func (s srvTestSuite) TestGetLBFromAddSubjs() { //nolint:govet
 	}
 
 	for _, tc := range testCases {
-		s.T().Run(tc.name, func(t *testing.T) {
+		suite.T().Run(tc.name, func(t *testing.T) {
 			check, subs := getLBFromAddSubjs(tc.adds)
 
 			assert.Equal(t, tc.expect, check)
@@ -60,7 +60,7 @@ func (s srvTestSuite) TestGetLBFromAddSubjs() { //nolint:govet
 	}
 }
 
-func (s srvTestSuite) TestIsLoadBalancer() { //nolint:govet
+func (suite *srvTestSuite) TestIsLoadBalancer() { //nolint:govet
 	type testCase struct {
 		name   string
 		subj   gidx.PrefixedID
@@ -96,7 +96,7 @@ func (s srvTestSuite) TestIsLoadBalancer() { //nolint:govet
 	}
 
 	for _, tc := range testCases {
-		s.T().Run(tc.name, func(t *testing.T) {
+		suite.T().Run(tc.name, func(t *testing.T) {
 			l := new(loadBalancer)
 
 			assert.Equal(t, l.loadBalancerID.String(), "")
@@ -114,7 +114,7 @@ func (s srvTestSuite) TestIsLoadBalancer() { //nolint:govet
 	}
 }
 
-func (s srvTestSuite) TestNewLoadBalancer() { //nolint:govet
+func (suite *srvTestSuite) TestNewLoadBalancer() { //nolint:govet
 	type testCase struct {
 		name   string
 		subj   gidx.PrefixedID
@@ -144,7 +144,7 @@ func (s srvTestSuite) TestNewLoadBalancer() { //nolint:govet
 	}
 
 	for _, tc := range testCases {
-		s.T().Run(tc.name, func(t *testing.T) {
+		suite.T().Run(tc.name, func(t *testing.T) {
 			server := mock.DummyAPI(tc.subj.String())
 			server.Start()
 
@@ -172,7 +172,7 @@ func (s srvTestSuite) TestNewLoadBalancer() { //nolint:govet
 	}
 }
 
-func (s srvTestSuite) TestNewLoadBalancer_InvalidAPI() { //nolint:govet
+func (suite *srvTestSuite) TestNewLoadBalancer_InvalidAPI() { //nolint:govet
 	srv := &Server{
 		APIClient: lbapi.NewClient("http://localhost:9999"),
 		Logger:    zap.NewNop().Sugar(),
@@ -180,6 +180,6 @@ func (s srvTestSuite) TestNewLoadBalancer_InvalidAPI() { //nolint:govet
 	}
 
 	lb, err := srv.newLoadBalancer(dummyLB, []gidx.PrefixedID{})
-	assert.Nil(s.T(), lb)
-	assert.NotNil(s.T(), err)
+	assert.Nil(suite.T(), lb)
+	assert.NotNil(suite.T(), err)
 }
