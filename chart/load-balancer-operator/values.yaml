@@ -47,9 +47,11 @@ operator:
       secretName: ""
       credsPath: "/creds"
     topicPrefix: "com.infratographer"
-    topics:
-      - "changes.*.lb"
-      - "events.create.port"
+    changeTopics:
+      - "*.lb"
+      - "*.port"
+    eventTopics: []
+    
     locations: []
 
 reloader:

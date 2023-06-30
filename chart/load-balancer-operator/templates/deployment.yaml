@@ -61,8 +61,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - process
-          {{- range .Values.operator.events.topics }}
+          {{- range .Values.operator.events.eventTopics }}
             - --event-topics={{ . }}
+          {{- end }}
+          {{- range .Values.operator.events.changeTopics }}
+            - --change-topics={{ . }}
           {{- end }}
           {{- range .Values.operator.events.locations }}
             - --event-locations={{ . }}
