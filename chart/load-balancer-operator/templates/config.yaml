@@ -10,4 +10,4 @@ data:
   LOADBALANCEROPERATOR_EVENTS_QUEUEGROUP: "{{ .Values.operator.events.queueGroup }}"
   LOADBALANCEROPERATOR_API_ENDPOINT: "{{ .Values.operator.api.endpoint }}"
   LOADBALANCEROPERATOR_CHART_PATH: "/chart.tgz"
-  LOADBALANCEROPERATOR_CHART_VALUE_PATH: "/lb-values.yaml"
+  LOADBALANCEROPERATOR_CHART_VALUES_PATH: "/lb-values.yaml"
