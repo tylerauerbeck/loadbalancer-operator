@@ -424,7 +424,7 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 				APIClient:  lbapi.NewClient(api.URL),
 				Context:    context.TODO(),
 				Logger:     zap.NewNop().Sugar(),
-				KubeClient: suite.Kubeconfig,
+				KubeClient: tcase.kubeClient,
 				ValuesPath: tcase.valPath,
 				Chart:      tcase.chart,
 			}

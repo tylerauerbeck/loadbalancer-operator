@@ -188,11 +188,3 @@ func loadHelmChart(chartPath string) (*chart.Chart, error) {
 
 	return chart, nil
 }
-
-func determineEndpoint(endpoint string, supergraph string) string {
-	if supergraph != "" {
-		return supergraph
-	}
-
-	return endpoint
-}
