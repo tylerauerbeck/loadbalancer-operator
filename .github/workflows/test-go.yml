@@ -1,0 +1,31 @@
+---
+name: Test - Golang
+
+# Run for all pushes to main and pull requests when Go or YAML files change
+on:
+  push:
+  pull_request:
+
+jobs:
+  gotest:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s-version: ["1.25", "1.26", "1.27"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+     
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - uses: tylerauerbeck/envtest-action@main
+        env:
+          KUBERNETES_VERSION: ${{ matrix.k8s-version }}
+        with:
+          args: './...'
