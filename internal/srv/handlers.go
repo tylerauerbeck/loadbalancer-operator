@@ -20,6 +20,8 @@ func (s *Server) locationCheck(i gidx.PrefixedID) bool {
 }
 
 func (s *Server) processEvent(messages <-chan *message.Message) {
+	var lb *loadBalancer
+
 	for msg := range messages {
 		s.Logger.Infof("received event message: %s, payload: %s\n", msg.UUID, string(msg.Payload))
 
@@ -30,21 +32,27 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 		}
 
 		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
-			lb, err := s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
-			if err != nil {
-				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
-				msg.Nack()
+			if m.EventType == string("ip-address.unassigned") {
+				lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
+			} else {
+				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
+				if err != nil {
+					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
+					msg.Nack()
+				}
 			}
 
 			if lb.lbType != typeNoLB {
 				switch {
-				case m.EventType == "ip-address.assigned" || m.EventType == "ip-address.unassigned":
+				case m.EventType == "ip-address.assigned":
 					s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 
 					if err := s.updateDeployment(lb); err != nil {
 						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.UUID, "loadbalancer", lb.loadBalancerID.String())
 						msg.Nack()
 					}
+				case m.EventType == "ip-address.unassigned":
+					s.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 				default:
 					s.Logger.Debugw("unknown event", "loadbalancer", lb.loadBalancerID.String(), "event", m.EventType)
 				}
@@ -57,6 +65,8 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 }
 
 func (s *Server) processChange(messages <-chan *message.Message) {
+	var lb *loadBalancer
+
 	for msg := range messages {
 		m, err := events.UnmarshalChangeMessage(msg.Payload)
 		if err != nil {
@@ -65,10 +75,14 @@ func (s *Server) processChange(messages <-chan *message.Message) {
 		}
 
 		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
-			lb, err := s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
-			if err != nil {
-				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
-				msg.Nack()
+			if m.EventType == string(events.DeleteChangeType) {
+				lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
+			} else {
+				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
+				if err != nil {
+					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
+					msg.Nack()
+				}
 			}
 
 			if lb.lbType != typeNoLB {

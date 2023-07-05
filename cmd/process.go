@@ -111,7 +111,6 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	}
 
 	server := &srv.Server{
-		// APIClient:        lbapi.NewClient(viper.GetString("api-endpoint")),
 		Echo:             eSrv,
 		Chart:            chart,
 		Context:          cx,
@@ -128,15 +127,11 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	// init lbapi client
 	if config.AppConfig.OIDC.ClientID != "" {
 		oauthHTTPClient := oauth2x.NewClient(ctx, oauth2x.NewClientCredentialsTokenSrc(ctx, config.AppConfig.OIDC))
-		server.APIClient = lbapi.NewClient(determineEndpoint(viper.GetString("api-endpoint"), viper.GetString("supergraph-endpoint")),
-			lbapi.WithHTTPClient(oauthHTTPClient),
-		)
-		server.IPAMClient = ipamclient.NewClient(determineEndpoint(viper.GetString("ipam-endpoint"), viper.GetString("supergraph-endpoint")),
-			ipamclient.WithHTTPClient(oauthHTTPClient),
-		)
+		server.APIClient = lbapi.NewClient(viper.GetString("supergraph-endpoint"), lbapi.WithHTTPClient(oauthHTTPClient))
+		server.IPAMClient = ipamclient.NewClient(viper.GetString("supergraph-endpoint"), ipamclient.WithHTTPClient(oauthHTTPClient))
 	} else {
-		server.APIClient = lbapi.NewClient(determineEndpoint(viper.GetString("api-endpoint"), viper.GetString("supergraph-endpoint")))
-		server.IPAMClient = ipamclient.NewClient(determineEndpoint(viper.GetString("ipam-endpoint"), viper.GetString("supergraph-endpoint")))
+		server.APIClient = lbapi.NewClient(viper.GetString("supergraph-endpoint"))
+		server.IPAMClient = ipamclient.NewClient(viper.GetString("supergraph-endpoint"))
 	}
 
 	if err := server.Run(cx); err != nil {
