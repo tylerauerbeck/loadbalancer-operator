@@ -125,7 +125,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	}
 
 	// init lbapi client
-	if config.AppConfig.OIDC.ClientID != "" {
+	if config.AppConfig.OIDC.TokenURL != "" {
 		oauthHTTPClient := oauth2x.NewClient(ctx, oauth2x.NewClientCredentialsTokenSrc(ctx, config.AppConfig.OIDC))
 		server.APIClient = lbapi.NewClient(viper.GetString("supergraph-endpoint"), lbapi.WithHTTPClient(oauthHTTPClient))
 		server.IPAMClient = ipamclient.NewClient(viper.GetString("supergraph-endpoint"), ipamclient.WithHTTPClient(oauthHTTPClient))
