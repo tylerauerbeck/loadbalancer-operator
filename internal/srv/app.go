@@ -115,7 +115,7 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 	hash := hashLBName(lb.loadBalancerID.String())
 
 	if _, err := s.CreateNamespace(hash); err != nil {
-		s.Logger.Debugw("unable to create namespace", "error", err, "namespace", hash)
+		s.Logger.Errorw("unable to create namespace", "error", err, "namespace", hash, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
@@ -126,13 +126,13 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 
 	values, err := s.newHelmValues(lb)
 	if err != nil {
-		s.Logger.Debugw("unable to prepare chart values", "error", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash)
+		s.Logger.Errorw("unable to prepare chart values", "error", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash)
 		return err
 	}
 
 	client, err := s.newHelmClient(hash)
 	if err != nil {
-		s.Logger.Debugw("unable to initialize helm client", "err", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash)
+		s.Logger.Errorw("unable to initialize helm client", "err", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash)
 		return err
 	}
 
@@ -142,11 +142,11 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 	_, err = hc.Run(s.Chart, values)
 
 	if err != nil {
-		s.Logger.Errorw("unable to deploy loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName)
+		s.Logger.Errorw("unable to deploy loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
-	s.Logger.Infow("loadbalancer deployed successfully", "namespace", hash, "releaseName", releaseName)
+	s.Logger.Infow("loadbalancer deployed successfully", "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 
 	return nil
 }
@@ -161,13 +161,13 @@ func (s *Server) updateDeployment(lb *loadBalancer) error {
 
 	values, err := s.newHelmValues(lb)
 	if err != nil {
-		s.Logger.Errorw("unable to prepare chart values", "error", err)
+		s.Logger.Errorw("unable to prepare chart values", "error", err, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
 	client, err := s.newHelmClient(hash)
 	if err != nil {
-		s.Logger.Errorw("unable to initialize helm client", "error", err)
+		s.Logger.Errorw("unable to initialize helm client", "error", err, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
@@ -176,11 +176,11 @@ func (s *Server) updateDeployment(lb *loadBalancer) error {
 	_, err = hc.Run(releaseName, s.Chart, values)
 
 	if err != nil {
-		s.Logger.Errorw("unable to upgrade loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName)
+		s.Logger.Errorw("unable to upgrade loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
-	s.Logger.Infow("loadbalancer upgraded successfully", "namespace", hash, "releaseName", releaseName)
+	s.Logger.Infow("loadbalancer upgraded successfully", "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 
 	return nil
 }
@@ -195,7 +195,7 @@ func (s *Server) removeDeployment(lb *loadBalancer) error {
 
 	client, err := s.newHelmClient(hash)
 	if err != nil {
-		s.Logger.Debugw("unable to initialize helm client", "error", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash, "releaseName", releaseName)
+		s.Logger.Errorw("unable to initialize helm client", "error", err, "loadBalancer", lb.loadBalancerID.String(), "namespace", hash, "releaseName", releaseName)
 		return err
 	}
 

@@ -37,7 +37,8 @@ operator:
     endpoint: "https://localhost:7608/query"
     oidc:
       enabled: false
-      tokenURL: ""
+      client:
+        tokenURL: ""
   chart:
     chartValues: ""
     chartBinaryData: ""

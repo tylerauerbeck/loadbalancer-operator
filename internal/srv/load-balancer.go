@@ -11,7 +11,7 @@ func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) (
 	if l.lbType != typeNoLB {
 		data, err := s.APIClient.GetLoadBalancer(s.Context, l.loadBalancerID.String())
 		if err != nil {
-			s.Logger.Errorw("unable to get loadbalancer from API", "error", err)
+			s.Logger.Errorw("unable to get loadbalancer from API", "error", err, "loadBalancer", l.loadBalancerID.String())
 			return nil, err
 		}
 

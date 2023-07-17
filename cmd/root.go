@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
-	"go.infratographer.com/loadbalancer-manager-haproxy/x/oauth2x"
+	"go.infratographer.com/x/oauth2x"
 
 	"go.infratographer.com/loadbalanceroperator/internal/config"
 
