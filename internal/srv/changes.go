@@ -1,7 +1,13 @@
 package srv
 
+import "context"
+
 func (s *Server) processLoadBalancerChangeCreate(lb *loadBalancer) error {
-	if err := s.newDeployment(lb); err != nil {
+	// if err := s.newDeployment(lb); err != nil {
+	// 	return err
+	// }
+
+	if err := s.createDeployment(context.TODO(), lb); err != nil {
 		return err
 	}
 
@@ -17,7 +23,11 @@ func (s *Server) processLoadBalancerChangeDelete(lb *loadBalancer) error {
 }
 
 func (s *Server) processLoadBalancerChangeUpdate(lb *loadBalancer) error {
-	if err := s.updateDeployment(lb); err != nil {
+	// if err := s.updateDeployment(lb); err != nil {
+	// 	return err
+	// }
+
+	if err := s.createDeployment(context.TODO(), lb); err != nil {
 		return err
 	}
 

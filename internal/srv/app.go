@@ -231,3 +231,27 @@ func checkNameLength(name string, limit int) bool {
 func hashLBName(name string) string {
 	return hex.EncodeToString([]byte(name))
 }
+
+func (s *Server) createDeployment(_ context.Context, lb *loadBalancer) error {
+	hash := hashLBName(lb.loadBalancerID.String())
+
+	client, err := s.newHelmClient(hash)
+	if err != nil {
+		s.Logger.Debugw("unable to initialize helm client", "error", err, "loadBalancer", lb.loadBalancerID.String())
+		return err
+	}
+
+	hc := action.NewList(client)
+	list, err := hc.Run()
+
+	if err != nil {
+		s.Logger.Debugw("unable to list helm releases", "error", err, "loadBalancer", lb.loadBalancerID.String())
+		return err
+	}
+
+	if len(list) > 0 {
+		return s.updateDeployment(lb)
+	} else {
+		return s.newDeployment(lb)
+	}
+}
