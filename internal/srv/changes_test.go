@@ -66,6 +66,8 @@ func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:gove
 		{
 			name:           "invalid loadbalancer - long name",
 			expectedErrors: []error{errInvalidObjectNameLength},
+			chart:          ch,
+			cfg:            suite.Kubeenv.Config,
 			msg: pubsubx.ChangeMessage{
 				EventType: "create",
 				SubjectID: "loadbal-reallyreallyreallyreallyreallyreallylongreallylong",
