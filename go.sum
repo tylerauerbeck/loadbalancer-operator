@@ -699,8 +699,8 @@ go.infratographer.com/ipam-api v0.0.3-0.20230627135853-8acda8f15bbe h1:FEVVwb8uQ
 go.infratographer.com/ipam-api v0.0.3-0.20230627135853-8acda8f15bbe/go.mod h1:AYzfwMo3pcgtc/9FbkJIJ0XYsGFCYoKOmeriwEp3pzk=
 go.infratographer.com/loadbalancer-manager-haproxy v0.0.4 h1:Av+aL1duiX6hot+wrRGk3ZoChF3es3Zmmroj8NP0H9I=
 go.infratographer.com/loadbalancer-manager-haproxy v0.0.4/go.mod h1:9JG9KPPEvL46GMAX4e5ZEx3SQgxxOk09oTh0uMVLqhE=
-go.infratographer.com/x v0.3.3-0.20230714204951-de3c9006fb6b h1:OOdO29vuUd9z5jP5dxdIngZ4spF3T1qUsm9yBezBqvQ=
-go.infratographer.com/x v0.3.3-0.20230714204951-de3c9006fb6b/go.mod h1:pXXSdeJBisAK3AdED5EFj7Yo8z8td7fOWDkNl4Dkp0s=
+go.infratographer.com/x v0.3.4 h1:K7azcoiLZPRdOnr4M7DMyB2DjZzXRVcfr7G6FeQd16o=
+go.infratographer.com/x v0.3.4/go.mod h1:pXXSdeJBisAK3AdED5EFj7Yo8z8td7fOWDkNl4Dkp0s=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

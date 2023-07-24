@@ -11,4 +11,4 @@ data:
   LOADBALANCEROPERATOR_API_ENDPOINT: "{{ .Values.operator.api.endpoint }}"
   LOADBALANCEROPERATOR_CHART_PATH: "/chart.tgz"
   LOADBALANCEROPERATOR_CHART_VALUES_PATH: "/lb-values.yaml"
-  LOADBALANCEROPERATOR_OIDC_CLIENT_TOKEN_URL: "{{ .Values.operator.api.oidc.client.tokenURL }}"
+  LOADBALANCEROPERATOR_OIDC_CLIENT_ISSUER: "{{ .Values.operator.api.oidc.client.issuer }}"

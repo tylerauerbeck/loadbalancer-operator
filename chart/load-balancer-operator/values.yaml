@@ -38,7 +38,7 @@ operator:
     oidc:
       enabled: false
       client:
-        tokenURL: ""
+        issuer: ""
   chart:
     chartValues: ""
     chartBinaryData: ""

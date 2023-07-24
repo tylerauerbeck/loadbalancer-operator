@@ -11,7 +11,7 @@ import (
 	"go.infratographer.com/x/echox"
 )
 
-func (suite srvTestSuite) TestVersionHandler() { // nolint:govet
+func (suite *srvTestSuite) TestVersionHandler() { // nolint:govet
 	srv, err := echox.NewServer(zap.NewNop(), echox.Config{}, nil)
 
 	require.NoError(suite.T(), err, "unexpected error creating new server")
