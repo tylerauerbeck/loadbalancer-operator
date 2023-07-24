@@ -13,3 +13,5 @@ bin
 
 # vscode directory
 .vscode
+
+vendor/
