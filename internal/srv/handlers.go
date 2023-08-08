@@ -1,11 +1,9 @@
 package srv
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
 	"golang.org/x/exp/slices"
@@ -30,7 +28,7 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 		m, err := events.UnmarshalEventMessage(msg.Payload)
 		if err != nil {
 			s.Logger.Errorw("unable to unmarshal event message", "error", err)
-			msg.Nack()
+			msg.Ack()
 
 			continue
 		}
@@ -42,7 +40,6 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
 				if err != nil {
 					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
-					msg.Nack()
 				}
 			}
 
@@ -53,7 +50,6 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 
 					if err := s.updateDeployment(lb); err != nil {
 						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.UUID, "loadbalancer", lb.loadBalancerID.String())
-						msg.Nack()
 					}
 				case m.EventType == "ip-address.unassigned":
 					s.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
@@ -75,27 +71,18 @@ func (s *Server) processChange(messages <-chan *message.Message) {
 		m, err := events.UnmarshalChangeMessage(msg.Payload)
 		if err != nil {
 			s.Logger.Errorw("unable to unmarshal change message", "error", err, "messageID", msg.UUID)
-			msg.Nack()
+			msg.Ack()
 
 			continue
 		}
 
 		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
-			if m.EventType == string(events.DeleteChangeType) {
+			if m.EventType == string(events.DeleteChangeType) && m.SubjectID.Prefix() == LBPrefix {
 				lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
 			} else {
 				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
 				if err != nil {
 					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID, "subjectID", m.SubjectID.String())
-					if errors.Is(err, lbapi.ErrLBNotfound) {
-						// ack and ignore
-						msg.Ack()
-					} else {
-						// nack and retry
-						msg.Nack()
-					}
-
-					continue
 				}
 			}
 
@@ -105,22 +92,19 @@ func (s *Server) processChange(messages <-chan *message.Message) {
 					s.Logger.Debugw("creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 
 					if err := s.processLoadBalancerChangeCreate(lb); err != nil {
-						s.Logger.Errorw("handler unable to create loadbalancer", "error", err, "loadbalancerID", lb.loadBalancerID.String())
-						msg.Nack()
+						s.Logger.Errorw("handler unable to create/update loadbalancer", "error", err, "loadbalancerID", lb.loadBalancerID.String())
 					}
 				case m.EventType == string(events.DeleteChangeType) && lb.lbType == typeLB:
 					s.Logger.Debugw("deleting loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 
 					if err := s.processLoadBalancerChangeDelete(lb); err != nil {
 						s.Logger.Errorw("handler unable to delete loadbalancer", "error", err, "loadbalancerID", lb.loadBalancerID.String())
-						msg.Nack()
 					}
 				default:
 					s.Logger.Debugw("updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 
 					if err := s.processLoadBalancerChangeUpdate(lb); err != nil {
 						s.Logger.Errorw("handler unable to update loadbalancer", "error", err, "loadbalancerID", lb.loadBalancerID.String())
-						msg.Nack()
 					}
 				}
 			}

@@ -2,6 +2,7 @@ package srv
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
@@ -25,6 +26,7 @@ type Server struct {
 	Logger           *zap.SugaredLogger
 	KubeClient       *rest.Config
 	SubscriberConfig events.SubscriberConfig
+	subscribers      []*events.Subscriber
 	Debug            bool
 	EventTopics      []string
 	ChangeTopics     []string
@@ -64,17 +66,37 @@ func (s *Server) Run(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) Shutdown() error {
+	var errs error
+
+	for _, sub := range s.subscribers {
+		if err := sub.Close(); err != nil {
+			errs = errors.Join(err)
+		}
+	}
+
+	return errs
+}
+
 func (s *Server) configureSubscribers() error {
 	var ev, ch []<-chan *message.Message
 
+	csub, err := events.NewSubscriber(s.SubscriberConfig)
+	if err != nil {
+		s.Logger.Errorw("unable to create change subscriber", zap.Error(err))
+		return errSubscriberCreate
+	}
+
+	esub, err := events.NewSubscriber(s.SubscriberConfig)
+	if err != nil {
+		s.Logger.Errorw("unable to create event subscriber", zap.Error(err))
+		return errSubscriberCreate
+	}
+
+	s.subscribers = append(s.subscribers, csub, esub)
+
 	for _, topic := range s.ChangeTopics {
 		s.Logger.Debugw("subscribing to change topic", "topic", topic)
-
-		csub, err := events.NewSubscriber(s.SubscriberConfig)
-		if err != nil {
-			s.Logger.Errorw("unable to create change subscriber", "error", err, "topic", topic)
-			return errSubscriberCreate
-		}
 
 		c, err := csub.SubscribeChanges(s.Context, topic)
 		if err != nil {
@@ -87,12 +109,6 @@ func (s *Server) configureSubscribers() error {
 
 	for _, topic := range s.EventTopics {
 		s.Logger.Debugw("subscribing to event topic", "topic", topic)
-
-		esub, err := events.NewSubscriber(s.SubscriberConfig)
-		if err != nil {
-			s.Logger.Errorw("unable to create event subscriber", "error", err, "topic", topic)
-			return errSubscriberCreate
-		}
 
 		e, err := esub.SubscribeEvents(s.Context, topic)
 		if err != nil {
