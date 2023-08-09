@@ -36,6 +36,7 @@ type Server struct {
 	Locations        []string
 	ServicePortKey   string
 	ContainerPortKey string
+	MetricsPort      int
 }
 
 // Run will start the server queue connections and healthcheck endpoints

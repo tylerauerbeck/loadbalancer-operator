@@ -40,6 +40,10 @@ var (
 	processDevMode bool
 )
 
+const (
+	DefaultLBMetricsPort = 29782
+)
+
 func init() {
 	// only available as a CLI arg because it shouldn't be something that could accidentially end up in a config file or env var
 	processCmd.Flags().BoolVar(&processDevMode, "dev", false, "dev mode: disables all auth checks, pretty logging, etc.")
@@ -76,6 +80,9 @@ func init() {
 
 	processCmd.PersistentFlags().String("helm-serviceport-key", "service.ports", "key to use for injecting port values for service into chart")
 	viperx.MustBindFlag(viper.GetViper(), "helm-serviceport-key", processCmd.PersistentFlags().Lookup("helm-serviceport-key"))
+
+	processCmd.PersistentFlags().Int("loadbalancer-metrics-port", DefaultLBMetricsPort, "port to expose deployed load balancer metrics on")
+	viperx.MustBindFlag(viper.GetViper(), "loadbalancer-metrics-port", processCmd.PersistentFlags().Lookup("loadbalancer-metrics-port"))
 
 	rootCmd.AddCommand(processCmd)
 }
@@ -122,6 +129,7 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		SubscriberConfig: config.AppConfig.Events.Subscriber,
 		ValuesPath:       viper.GetString("chart-values-path"),
 		Locations:        viper.GetStringSlice("event-locations"),
+		MetricsPort:      viper.GetInt("loadbalancer-metrics-port"),
 
 		ContainerPortKey: viper.GetString("helm-containerport-key"),
 		ServicePortKey:   viper.GetString("helm-serviceport-key"),

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
@@ -37,9 +38,13 @@ func (v helmvalues) generateLBHelmVals(lb *loadBalancer, s *Server) {
 	var cport, sport []interface{}
 
 	for _, port := range lb.lbData.LoadBalancer.Ports.Edges {
-		cport = append(cport, map[string]interface{}{"name": port.Node.Name, "containerPort": port.Node.Number})
-		sport = append(sport, map[string]interface{}{"name": port.Node.Name, "port": port.Node.Number})
+		cport = append(cport, map[string]interface{}{"name": "p" + strconv.Itoa(int(port.Node.Number)), "containerPort": port.Node.Number})
+		sport = append(sport, map[string]interface{}{"name": "p" + strconv.Itoa(int(port.Node.Number)), "port": port.Node.Number})
 	}
+
+	// add metrics port
+	cport = append(cport, map[string]interface{}{"name": "infra9-metrics", "containerPort": s.MetricsPort})
+	sport = append(sport, map[string]interface{}{"name": "infra9-metrics", "port": s.MetricsPort})
 
 	if cport != nil {
 		if cports, err := json.Marshal(cport); err != nil {
