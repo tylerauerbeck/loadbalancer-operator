@@ -1,6 +1,7 @@
 package srv
 
 import (
+	"context"
 	"strings"
 
 	"go.infratographer.com/x/events"
@@ -42,8 +43,8 @@ func (s *Server) processEvent(messages <-chan events.Message[events.EventMessage
 				switch {
 				case m.EventType == "ip-address.assigned":
 					s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
-
-					if err := s.updateDeployment(lb); err != nil {
+					// TODO: plumb context through appropriately when we add tracing
+					if err := s.createDeployment(context.TODO(), lb); err != nil {
 						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancer", lb.loadBalancerID.String())
 					}
 				case m.EventType == "ip-address.unassigned":

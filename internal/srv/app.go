@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lestrrat-go/backoff/v2"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/storage/driver"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyv1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -141,12 +143,15 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 	hc.Namespace = hash
 	_, err = hc.Run(s.Chart, values)
 
-	if err != nil {
+	switch err {
+	case nil:
+		s.Logger.Infow("loadbalancer deployed successfully", "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
+	case driver.ErrReleaseExists:
+		s.Logger.Debugw("loadbalancer already exists, proceeding to upgrade...", "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
+	default:
 		s.Logger.Errorw("unable to deploy loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
-
-	s.Logger.Infow("loadbalancer deployed successfully", "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 
 	return nil
 }
@@ -176,7 +181,7 @@ func (s *Server) updateDeployment(lb *loadBalancer) error {
 	_, err = hc.Run(releaseName, s.Chart, values)
 
 	if err != nil {
-		s.Logger.Errorw("unable to upgrade loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
+		s.Logger.Debugw("unable to upgrade loadbalancer", "error", err, "namespace", hash, "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
@@ -235,23 +240,38 @@ func hashLBName(name string) string {
 func (s *Server) createDeployment(_ context.Context, lb *loadBalancer) error {
 	hash := hashLBName(lb.loadBalancerID.String())
 
+	releaseName := fmt.Sprintf("lb-%s", hash)
+	if !checkNameLength(releaseName, helmReleaseLength) {
+		releaseName = releaseName[0:helmReleaseLength]
+	}
+
 	client, err := s.newHelmClient(hash)
 	if err != nil {
 		s.Logger.Debugw("unable to initialize helm client", "error", err, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
 
-	hc := action.NewList(client)
-	list, err := hc.Run()
+	histClient := action.NewHistory(client)
+	histClient.Max = 1
 
-	if err != nil {
-		s.Logger.Debugw("unable to list helm releases", "error", err, "loadBalancer", lb.loadBalancerID.String())
-		return err
+	if _, err := histClient.Run(releaseName); errors.Is(err, driver.ErrReleaseNotFound) {
+		err = s.newDeployment(lb)
+		if err != nil && !errors.Is(err, driver.ErrReleaseExists) {
+			return err
+		}
 	}
 
-	if len(list) > 0 {
-		return s.updateDeployment(lb)
-	} else {
-		return s.newDeployment(lb)
+	b := s.BackoffConfig.Start(s.Context)
+	for backoff.Continue(b) {
+		err = s.updateDeployment(lb)
+		if err == nil {
+			return nil
+		} else {
+			s.Logger.Debugw("unable to update loadbalancer, retrying...", "error", err, "loadBalancer", lb.loadBalancerID.String())
+		}
 	}
+
+	s.Logger.Errorw("failed to update loadbalancer", "error", err, "loadBalancer", lb.loadBalancerID.String())
+
+	return err
 }

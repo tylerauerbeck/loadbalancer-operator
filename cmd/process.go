@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"time"
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/lestrrat-go/backoff/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -38,7 +40,10 @@ var processCmd = &cobra.Command{
 }
 
 var (
-	processDevMode bool
+	processDevMode     bool
+	defaultCooldown    = 5
+	defaultJitter      = 0.5
+	defaultMaxInterval = 2 * time.Minute
 )
 
 const (
@@ -123,7 +128,15 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		logger.Fatalw("failed to create new events connection", "error", err)
 	}
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(time.Second),
+		backoff.WithMaxInterval(defaultMaxInterval),
+		backoff.WithJitterFactor(defaultJitter),
+		backoff.WithMaxRetries(defaultCooldown),
+	)
+
 	server := &srv.Server{
+		BackoffConfig:    backoffPolicy,
 		Echo:             eSrv,
 		Chart:            chart,
 		EventsConnection: conn,

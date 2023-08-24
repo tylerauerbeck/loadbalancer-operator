@@ -3,6 +3,7 @@ package srv
 import (
 	"context"
 
+	"github.com/lestrrat-go/backoff/v2"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
@@ -16,6 +17,7 @@ import (
 // Server holds options for server connectivity and settings
 type Server struct {
 	APIClient        *lbapi.Client
+	BackoffConfig    backoff.Policy
 	IPAMClient       *ipamclient.Client
 	Echo             *echox.Server
 	Context          context.Context

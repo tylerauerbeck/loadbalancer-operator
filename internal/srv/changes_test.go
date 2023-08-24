@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/lestrrat-go/backoff/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
@@ -41,15 +43,23 @@ func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:gove
 
 	require.NoError(suite.T(), err, "unexpected error creating new server")
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(1*time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	srv := Server{
-		APIClient:    lbapi.NewClient(api.URL),
-		Echo:         eSrv,
-		Context:      context.TODO(),
-		Logger:       zap.NewNop().Sugar(),
-		Debug:        false,
-		ChangeTopics: []string{"foo", "bar"},
-		ChartPath:    cp,
-		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
+		APIClient:     lbapi.NewClient(api.URL),
+		BackoffConfig: backoffPolicy,
+		Echo:          eSrv,
+		Context:       context.TODO(),
+		Logger:        zap.NewNop().Sugar(),
+		Debug:         false,
+		ChangeTopics:  []string{"foo", "bar"},
+		ChartPath:     cp,
+		ValuesPath:    pwd + "/../../hack/ci/values.yaml",
 	}
 
 	testCases := []testCase{
@@ -120,15 +130,23 @@ func (suite *srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 
 	defer api.Close()
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(1*time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	srv := Server{
-		APIClient:    lbapi.NewClient(api.URL),
-		Echo:         eSrv,
-		Context:      context.TODO(),
-		Logger:       zap.NewNop().Sugar(),
-		Debug:        false,
-		ChangeTopics: []string{"foo", "bar"},
-		ChartPath:    cp,
-		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
+		APIClient:     lbapi.NewClient(api.URL),
+		BackoffConfig: backoffPolicy,
+		Echo:          eSrv,
+		Context:       context.TODO(),
+		Logger:        zap.NewNop().Sugar(),
+		Debug:         false,
+		ChangeTopics:  []string{"foo", "bar"},
+		ChartPath:     cp,
+		ValuesPath:    pwd + "/../../hack/ci/values.yaml",
 	}
 
 	testCases := []testCase{
@@ -196,17 +214,25 @@ func (suite *srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
 
 	defer api.Close()
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(1*time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	srv := Server{
-		APIClient:    lbapi.NewClient(api.URL),
-		KubeClient:   suite.Kubeenv.Config,
-		Echo:         eSrv,
-		Context:      context.TODO(),
-		Logger:       zap.NewNop().Sugar(),
-		Chart:        ch,
-		Debug:        false,
-		ChangeTopics: []string{"foo", "bar"},
-		ChartPath:    cp,
-		ValuesPath:   pwd + "/../../hack/ci/values.yaml",
+		APIClient:     lbapi.NewClient(api.URL),
+		BackoffConfig: backoffPolicy,
+		KubeClient:    suite.Kubeenv.Config,
+		Echo:          eSrv,
+		Context:       context.TODO(),
+		Logger:        zap.NewNop().Sugar(),
+		Chart:         ch,
+		Debug:         false,
+		ChangeTopics:  []string{"foo", "bar"},
+		ChartPath:     cp,
+		ValuesPath:    pwd + "/../../hack/ci/values.yaml",
 	}
 
 	id := gidx.MustNewID("loadbal")

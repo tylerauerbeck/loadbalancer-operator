@@ -3,7 +3,9 @@ package srv
 import (
 	"context"
 	"os"
+	"time"
 
+	"github.com/lestrrat-go/backoff/v2"
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
@@ -66,12 +68,20 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 
 	loc, _ := gidx.Parse("testloc-abcd1234")
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	srv := Server{
-		APIClient:  lbapi.NewClient(api.URL),
-		Echo:       eSrv,
-		Context:    context.TODO(),
-		Logger:     zap.NewNop().Sugar(),
-		KubeClient: suite.Kubeconfig,
+		APIClient:     lbapi.NewClient(api.URL),
+		BackoffConfig: backoffPolicy,
+		Echo:          eSrv,
+		Context:       context.TODO(),
+		Logger:        zap.NewNop().Sugar(),
+		KubeClient:    suite.Kubeconfig,
 		// SubscriberConfig: suite.SubConfig,
 		EventsConnection: suite.Connection,
 		ChangeTopics:     []string{"*.load-balancer"},
