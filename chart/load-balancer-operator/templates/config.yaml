@@ -5,9 +5,9 @@ metadata:
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
 data:
-  LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_PREFIX: "{{ .Values.operator.events.topicPrefix }}"
-  LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_URL: "{{ .Values.operator.events.connectionURL }}"
-  LOADBALANCEROPERATOR_EVENTS_SUBSCRIBER_QUEUEGROUP: "{{ .Values.operator.events.queueGroup }}"
+  LOADBALANCEROPERATOR_EVENTS_NATS_SUBSCRIBEPREFIX: "{{ .Values.operator.events.topicPrefix }}"
+  LOADBALANCEROPERATOR_EVENTS_NATS_URL: "{{ .Values.operator.events.connectionURL }}"
+  LOADBALANCEROPERATOR_EVENTS_NATS_QUEUEGROUP: "{{ .Values.operator.events.queueGroup }}"
   LOADBALANCEROPERATOR_API_ENDPOINT: "{{ .Values.operator.api.endpoint }}"
   LOADBALANCEROPERATOR_CHART_PATH: "/chart.tgz"
   LOADBALANCEROPERATOR_CHART_VALUES_PATH: "/lb-values.yaml"

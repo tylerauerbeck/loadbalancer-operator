@@ -2,6 +2,7 @@
 package utils
 
 import (
+	"log"
 	"os"
 
 	"go.uber.org/zap"
@@ -50,8 +51,7 @@ func CreateTestValues(outputDir string, yamlString string) (string, error) {
 
 type OperatorTestSuite struct {
 	suite.Suite
-	PubConfig  events.PublisherConfig
-	SubConfig  events.SubscriberConfig
+	Connection events.Connection
 	Logger     *zap.SugaredLogger
 	Kubeenv    *envtest.Environment
 	Kubeconfig *rest.Config
@@ -63,9 +63,21 @@ func (suite *OperatorTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	suite.PubConfig = nats.PublisherConfig
+	config := events.Config{
+		NATS: events.NATSConfig{
+			URL:             nats.Server.ClientURL(),
+			SubscribePrefix: "com.infratographer.testing",
+			PublishPrefix:   "com.infratographer.testing",
+			Source:          "loadbalanceroperator",
+		},
+	}
 
-	suite.SubConfig = nats.SubscriberConfig
+	conn, err := events.NewConnection(config)
+	if err != nil {
+		panic(err)
+	}
+
+	suite.Connection = conn
 
 	env, cfg := StartKube()
 	suite.Kubeenv = env
@@ -102,4 +114,10 @@ func CreateWorkspace(dir string) (string, string, *chart.Chart, string) {
 	}
 
 	return d, chartPath, ch, pwd
+}
+
+func ErrPanic(msg string, err error) {
+	if err != nil {
+		log.Panicf("%s err: %s", msg, err.Error())
+	}
 }

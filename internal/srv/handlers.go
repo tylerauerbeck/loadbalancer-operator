@@ -3,7 +3,6 @@ package srv
 import (
 	"strings"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
 	"golang.org/x/exp/slices"
@@ -19,19 +18,15 @@ func (s *Server) locationCheck(i gidx.PrefixedID) bool {
 	return false
 }
 
-func (s *Server) processEvent(messages <-chan *message.Message) {
+func (s *Server) processEvent(messages <-chan events.Message[events.EventMessage]) {
 	var lb *loadBalancer
 
+	var err error
+
 	for msg := range messages {
-		s.Logger.Infof("received event message: %s, payload: %s\n", msg.UUID, string(msg.Payload))
-
-		m, err := events.UnmarshalEventMessage(msg.Payload)
-		if err != nil {
-			s.Logger.Errorw("unable to unmarshal event message", "error", err)
-			msg.Ack()
-
-			continue
-		}
+		m := msg.Message()
+		s.Logger.Infow("messageType", "event", "messageID", msg.ID())
+		s.Logger.Debugw("messageType", "event", "messageID", msg.ID(), "data", m)
 
 		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
 			if m.EventType == string("ip-address.unassigned") {
@@ -39,7 +34,7 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 			} else {
 				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
 				if err != nil {
-					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID)
+					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancerID", m.SubjectID.String())
 				}
 			}
 
@@ -49,7 +44,7 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 					s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
 
 					if err := s.updateDeployment(lb); err != nil {
-						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.UUID, "loadbalancer", lb.loadBalancerID.String())
+						s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancer", lb.loadBalancerID.String())
 					}
 				case m.EventType == "ip-address.unassigned":
 					s.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
@@ -60,21 +55,19 @@ func (s *Server) processEvent(messages <-chan *message.Message) {
 		}
 		// we need to Acknowledge that we received and processed the message,
 		// otherwise, it will be resent over and over again.
-		msg.Ack()
+		if err := msg.Ack(); err != nil {
+			s.Logger.Errorw("unable to acknowledge message", "error", err, "messageID", msg.ID())
+		}
 	}
 }
 
-func (s *Server) processChange(messages <-chan *message.Message) {
+func (s *Server) processChange(messages <-chan events.Message[events.ChangeMessage]) {
 	var lb *loadBalancer
 
-	for msg := range messages {
-		m, err := events.UnmarshalChangeMessage(msg.Payload)
-		if err != nil {
-			s.Logger.Errorw("unable to unmarshal change message", "error", err, "messageID", msg.UUID)
-			msg.Ack()
+	var err error
 
-			continue
-		}
+	for msg := range messages {
+		m := msg.Message()
 
 		if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
 			if m.EventType == string(events.DeleteChangeType) && m.SubjectID.Prefix() == LBPrefix {
@@ -82,7 +75,7 @@ func (s *Server) processChange(messages <-chan *message.Message) {
 			} else {
 				lb, err = s.newLoadBalancer(m.SubjectID, m.AdditionalSubjectIDs)
 				if err != nil {
-					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.UUID, "subjectID", m.SubjectID.String())
+					s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.ID(), "subjectID", m.SubjectID.String())
 				}
 			}
 
@@ -111,6 +104,8 @@ func (s *Server) processChange(messages <-chan *message.Message) {
 		}
 		// we need to Acknowledge that we received and processed the message,
 		// otherwise, it will be resent over and over again.
-		msg.Ack()
+		if err := msg.Ack(); err != nil {
+			s.Logger.Errorw("unable to acknowledge message", "error", err, "messageID", msg.ID())
+		}
 	}
 }

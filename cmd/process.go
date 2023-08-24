@@ -18,6 +18,7 @@ import (
 	"go.infratographer.com/ipam-api/pkg/ipamclient"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/echox"
+	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/oauth2x"
 	"go.infratographer.com/x/versionx"
 	"go.infratographer.com/x/viperx"
@@ -117,16 +118,21 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 		logger.Fatal("failed to initialize new server", zap.Error(err))
 	}
 
+	conn, err := events.NewConnection(config.AppConfig.Events)
+	if err != nil {
+		logger.Fatalw("failed to create new events connection", "error", err)
+	}
+
 	server := &srv.Server{
 		Echo:             eSrv,
 		Chart:            chart,
+		EventsConnection: conn,
 		Context:          cx,
 		Debug:            viper.GetBool("logging.debug"),
 		KubeClient:       client,
 		Logger:           logger,
 		EventTopics:      viper.GetStringSlice("event-topics"),
 		ChangeTopics:     viper.GetStringSlice("change-topics"),
-		SubscriberConfig: config.AppConfig.Events.Subscriber,
 		ValuesPath:       viper.GetString("chart-values-path"),
 		Locations:        viper.GetStringSlice("event-locations"),
 		MetricsPort:      viper.GetInt("loadbalancer-metrics-port"),

@@ -31,6 +31,8 @@ var rootCmd = &cobra.Command{
 	Long:  `A controller for processing requests for loadbalancers from a specified queue.`,
 }
 
+var appName = "loadbalanceroperator"
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -51,7 +53,7 @@ func init() {
 	rootCmd.PersistentFlags().String("healthcheck-port", ":8080", "port to run healthcheck probe on")
 	viperx.MustBindFlag(viper.GetViper(), "healthcheck-port", rootCmd.PersistentFlags().Lookup("healthcheck-port"))
 
-	events.MustViperFlagsForSubscriber(viper.GetViper(), processCmd.Flags())
+	events.MustViperFlags(viper.GetViper(), processCmd.Flags(), appName)
 	oauth2x.MustViperFlags(viper.GetViper(), rootCmd.Flags())
 
 	// Cobra also supports local flags, which will only run

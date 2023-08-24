@@ -67,12 +67,13 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 	loc, _ := gidx.Parse("testloc-abcd1234")
 
 	srv := Server{
-		APIClient:        lbapi.NewClient(api.URL),
-		Echo:             eSrv,
-		Context:          context.TODO(),
-		Logger:           zap.NewNop().Sugar(),
-		KubeClient:       suite.Kubeconfig,
-		SubscriberConfig: suite.SubConfig,
+		APIClient:  lbapi.NewClient(api.URL),
+		Echo:       eSrv,
+		Context:    context.TODO(),
+		Logger:     zap.NewNop().Sugar(),
+		KubeClient: suite.Kubeconfig,
+		// SubscriberConfig: suite.SubConfig,
+		EventsConnection: suite.Connection,
 		ChangeTopics:     []string{"*.load-balancer"},
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
@@ -83,43 +84,56 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 	// TODO: check that release does not exist
 
 	// publish a message to the change channel
-	pub := suite.PubConfig
-	p, _ := events.NewPublisher(pub)
-	_ = p.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
+	_, err = srv.EventsConnection.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.CreateChangeType),
 		SubjectID:            id,
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message", err)
+	}
 
-	_ = srv.configureSubscribers()
+	err = srv.configureSubscribers()
+	if err != nil {
+		utils.ErrPanic("unable to configure subscribers", err)
+	}
 
 	go srv.processChange(srv.changeChannels[0])
 	// TODO: check that namespace exists
 	// TODO: check that release exists
 
-	_ = p.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
+	_, err = srv.EventsConnection.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.UpdateChangeType),
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 		SubjectID:            id,
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message -2", err)
+	}
 
 	// TODO: check that namespace exists
 	// TODO: check that release exists
 	// TODO: verify some update, maybe with values file
 
-	_ = p.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
+	_, err = srv.EventsConnection.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.UpdateChangeType),
 		AdditionalSubjectIDs: []gidx.PrefixedID{id, loc},
 		SubjectID:            gidx.MustNewID("loadprt"),
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message -3", err)
+	}
 
 	//TODO: verify some update exists
 
-	_ = p.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
+	_, err = srv.EventsConnection.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.DeleteChangeType),
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 		SubjectID:            id,
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message -4", err)
+	}
 }
 
 // TODO: add more extensive tests once we start processing event messages
@@ -161,34 +175,41 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
 		KubeClient:       suite.Kubeconfig,
-		SubscriberConfig: suite.SubConfig,
+		EventsConnection: suite.Connection,
 		EventTopics:      []string{"*.load-balancer-event"},
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
 	}
 
-	pub := suite.PubConfig
-	p, _ := events.NewPublisher(pub)
-	_ = p.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
+	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
 		EventType:            "create",
 		SubjectID:            id,
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message", err)
+	}
 
 	_ = srv.configureSubscribers()
 
 	go srv.processEvent(srv.eventChannels[0])
 
-	_ = p.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
+	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
 		EventType:            "update",
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 		SubjectID:            id,
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message", err)
+	}
 
-	_ = p.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
+	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
 		EventType:            "delete",
 		AdditionalSubjectIDs: []gidx.PrefixedID{loc},
 		SubjectID:            id,
 	})
+	if err != nil {
+		utils.ErrPanic("unable to publish message", err)
+	}
 }

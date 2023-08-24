@@ -2,9 +2,7 @@ package srv
 
 import (
 	"context"
-	"errors"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
@@ -21,12 +19,11 @@ type Server struct {
 	IPAMClient       *ipamclient.Client
 	Echo             *echox.Server
 	Context          context.Context
-	eventChannels    []<-chan *message.Message
-	changeChannels   []<-chan *message.Message
+	EventsConnection events.Connection
+	eventChannels    []<-chan events.Message[events.EventMessage]
+	changeChannels   []<-chan events.Message[events.ChangeMessage]
 	Logger           *zap.SugaredLogger
 	KubeClient       *rest.Config
-	SubscriberConfig events.SubscriberConfig
-	subscribers      []*events.Subscriber
 	Debug            bool
 	EventTopics      []string
 	ChangeTopics     []string
@@ -68,38 +65,23 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) Shutdown() error {
-	var errs error
-
-	for _, sub := range s.subscribers {
-		if err := sub.Close(); err != nil {
-			errs = errors.Join(err)
-		}
+	if err := s.EventsConnection.Shutdown(s.Context); err != nil {
+		s.Logger.Debugw("Unable to shutdown connection", "error", err)
+		return err
 	}
 
-	return errs
+	return nil
 }
 
 func (s *Server) configureSubscribers() error {
-	var ev, ch []<-chan *message.Message
+	var ch []<-chan events.Message[events.ChangeMessage]
 
-	csub, err := events.NewSubscriber(s.SubscriberConfig)
-	if err != nil {
-		s.Logger.Errorw("unable to create change subscriber", zap.Error(err))
-		return errSubscriberCreate
-	}
-
-	esub, err := events.NewSubscriber(s.SubscriberConfig)
-	if err != nil {
-		s.Logger.Errorw("unable to create event subscriber", zap.Error(err))
-		return errSubscriberCreate
-	}
-
-	s.subscribers = append(s.subscribers, csub, esub)
+	var ev []<-chan events.Message[events.EventMessage]
 
 	for _, topic := range s.ChangeTopics {
 		s.Logger.Debugw("subscribing to change topic", "topic", topic)
 
-		c, err := csub.SubscribeChanges(s.Context, topic)
+		c, err := s.EventsConnection.SubscribeChanges(s.Context, topic)
 		if err != nil {
 			s.Logger.Errorw("unable to subscribe to change topic", "error", err, "topic", topic, "type", "change")
 			return errSubscriptionCreate
@@ -111,7 +93,7 @@ func (s *Server) configureSubscribers() error {
 	for _, topic := range s.EventTopics {
 		s.Logger.Debugw("subscribing to event topic", "topic", topic)
 
-		e, err := esub.SubscribeEvents(s.Context, topic)
+		e, err := s.EventsConnection.SubscribeEvents(s.Context, topic)
 		if err != nil {
 			s.Logger.Errorw("unable to subscribe to event topic", "error", err, "topic", topic, "type", "event")
 			return errSubscriptionCreate

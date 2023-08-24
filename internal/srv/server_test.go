@@ -52,7 +52,7 @@ func (suite *srvTestSuite) TestRun() { //nolint:govet
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
 		KubeClient:       suite.Kubeconfig,
-		SubscriberConfig: suite.SubConfig,
+		EventsConnection: suite.Connection,
 		ChangeTopics:     []string{"*.load-balancer-run"},
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
