@@ -44,7 +44,6 @@ func (v helmvalues) generateLBHelmVals(lb *loadBalancer, s *Server) {
 
 	// add metrics port
 	cport = append(cport, map[string]interface{}{"name": "infra9-metrics", "containerPort": s.MetricsPort})
-	sport = append(sport, map[string]interface{}{"name": "infra9-metrics", "port": s.MetricsPort})
 
 	if cport != nil {
 		if cports, err := json.Marshal(cport); err != nil {
