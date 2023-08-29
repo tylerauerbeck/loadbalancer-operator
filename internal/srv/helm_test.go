@@ -50,8 +50,8 @@ func (suite *srvTestSuite) TestGenerateLBHelmVals() {
 	opts.generateLBHelmVals(lb, s)
 
 	assert.NotNil(suite.T(), opts.StringValues)
-	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".loadBalancerID="+lb.loadBalancerID.String())
-	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".loadBalancerIDEnc="+hash)
+	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".lbID="+lb.loadBalancerID.String())
+	assert.Contains(suite.T(), opts.StringValues, managedHelmKeyPrefix+".lbIDEnc="+hash)
 
 	assert.NotNil(suite.T(), opts.JSONValues)
 }

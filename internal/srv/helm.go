@@ -25,13 +25,13 @@ const (
 
 func (v helmvalues) generateLBHelmVals(lb *loadBalancer, s *Server) {
 	// add loadbalancer id values
-	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".loadBalancerID", lb.loadBalancerID.String()))
-	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".loadBalancerIDEnc", hex.EncodeToString([]byte(lb.loadBalancerID.String()))))
+	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".lbID", lb.loadBalancerID.String()))
+	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".lbIDEnc", hex.EncodeToString([]byte(lb.loadBalancerID.String()))))
 
 	// add IP address if it is available; will be empty if an IP is not yet assigned
 	// while multiple addresses are possible, we only support one for now
 	if len(lb.lbData.LoadBalancer.IPAddresses) > 0 {
-		v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".loadBalancerIP", lb.lbData.LoadBalancer.IPAddresses[0].IP))
+		v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".lbIP", lb.lbData.LoadBalancer.IPAddresses[0].IP))
 	}
 
 	// add port values
