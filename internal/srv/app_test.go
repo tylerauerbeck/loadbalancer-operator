@@ -149,12 +149,12 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 			subj := tcase.id
 			adds := []gidx.PrefixedID{}
 
-			lb, err := srv.newLoadBalancer(subj, adds)
+			lb, err := srv.newLoadBalancer(context.TODO(), subj, adds)
 
 			assert.Nil(t, err)
 
 			hash := hashLBName(lb.loadBalancerID.String())
-			ns, err := srv.CreateNamespace(hash)
+			ns, err := srv.CreateNamespace(context.TODO(), hash)
 
 			if tcase.expectError {
 				assert.NotNil(t, err)
@@ -231,7 +231,7 @@ func (suite *srvTestSuite) TestRemoveNamespace() {
 				KubeClient: tcase.kubeclient,
 			}
 
-			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
 
 			assert.Nil(t, err)
 
@@ -239,11 +239,11 @@ func (suite *srvTestSuite) TestRemoveNamespace() {
 
 			// TODO: check that namespace doesn't exist
 
-			_, _ = srv.CreateNamespace(hash)
+			_, _ = srv.CreateNamespace(context.TODO(), hash)
 
 			// TODO: check that namespace does exist
 
-			err = srv.removeNamespace(hash)
+			err = srv.removeNamespace(context.TODO(), hash)
 
 			// TODO: check that namespace does not exist
 
@@ -344,7 +344,7 @@ func (suite *srvTestSuite) TestNewDeployment() {
 				Chart:      tcase.chart,
 			}
 
-			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
 
 			assert.Nil(t, err)
 
@@ -352,12 +352,12 @@ func (suite *srvTestSuite) TestNewDeployment() {
 
 			// TODO: check that namespace doesn't exist
 
-			_, _ = srv.CreateNamespace(hash)
+			_, _ = srv.CreateNamespace(context.TODO(), hash)
 
 			// TODO: check that namespace does exist
 
 			// TODO: check that deployment doesn't exist
-			err = srv.newDeployment(lb)
+			err = srv.newDeployment(context.TODO(), lb)
 
 			// TODO: check that deployment exists
 
@@ -429,7 +429,7 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 				Chart:      tcase.chart,
 			}
 
-			lb, err := srv.newLoadBalancer(tcase.id, []gidx.PrefixedID{})
+			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
 
 			assert.Nil(t, err)
 
@@ -437,14 +437,14 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 
 			// TODO: check that namespace does not exist
 
-			_, _ = srv.CreateNamespace(hash)
+			_, _ = srv.CreateNamespace(context.TODO(), hash)
 
 			// TODO: check that namespace does exist
 			// TODO: check that release does not exist
-			_ = srv.newDeployment(lb)
+			_ = srv.newDeployment(context.TODO(), lb)
 			// TODO: check that release does exist
 
-			err = srv.removeDeployment(lb)
+			err = srv.removeDeployment(context.TODO(), lb)
 
 			// TODO: check that release does not exist
 			// tODO: check that namespace does not exist

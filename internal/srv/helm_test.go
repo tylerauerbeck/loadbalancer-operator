@@ -39,7 +39,7 @@ func (suite *srvTestSuite) TestGenerateLBHelmVals() {
 		Logger:           zap.NewNop().Sugar(),
 	}
 
-	lb, _ := s.newLoadBalancer(id, nil)
+	lb, _ := s.newLoadBalancer(context.TODO(), id, nil)
 
 	hash := hex.EncodeToString([]byte(lb.loadBalancerID.String()))
 
@@ -125,7 +125,7 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 				ServicePortKey:   "service.ports",
 			}
 
-			lb, _ := srv.newLoadBalancer(tcase.lb.loadBalancerID, nil)
+			lb, _ := srv.newLoadBalancer(context.TODO(), tcase.lb.loadBalancerID, nil)
 
 			values, err := srv.newHelmValues(lb)
 			if tcase.expectError {

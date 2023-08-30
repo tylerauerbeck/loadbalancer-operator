@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/lestrrat-go/backoff/v2"
+	"go.opentelemetry.io/otel"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	v1 "k8s.io/api/core/v1"
@@ -22,7 +23,7 @@ const (
 	kubeNSLength      = 63
 )
 
-func (s *Server) removeNamespace(ns string) error {
+func (s *Server) removeNamespace(ctx context.Context, ns string) error {
 	s.Logger.Debugw("removing namespace", "namespace", ns)
 	kc, err := kubernetes.NewForConfig(s.KubeClient)
 
@@ -31,7 +32,7 @@ func (s *Server) removeNamespace(ns string) error {
 		return err
 	}
 
-	err = kc.CoreV1().Namespaces().Delete(s.Context, ns, metav1.DeleteOptions{})
+	err = kc.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func (s *Server) removeNamespace(ns string) error {
 
 // CreateNamespace creates namespaces for the specified group that is
 // provided in the event received
-func (s *Server) CreateNamespace(hash string) (*v1.Namespace, error) {
+func (s *Server) CreateNamespace(ctx context.Context, hash string) (*v1.Namespace, error) {
 	s.Logger.Debugw("ensuring namespace exists", "namespace", hash)
 
 	if !checkNameLength(hash, kubeNSLength) {
@@ -69,13 +70,13 @@ func (s *Server) CreateNamespace(hash string) (*v1.Namespace, error) {
 		Status: &applyv1.NamespaceStatusApplyConfiguration{},
 	}
 
-	ns, err := kc.CoreV1().Namespaces().Apply(s.Context, &apSpec, metav1.ApplyOptions{FieldManager: "loadbalanceroperator"})
+	ns, err := kc.CoreV1().Namespaces().Apply(ctx, &apSpec, metav1.ApplyOptions{FieldManager: "loadbalanceroperator"})
 	if err != nil {
 		s.Logger.Debugw("unable to create namespace", "error", err, "namespace", hash)
 		return nil, errors.Join(err, errInvalidNamespace)
 	}
 
-	if err := attachRoleBinding(s.Context, kc, hash); err != nil {
+	if err := attachRoleBinding(ctx, kc, hash); err != nil {
 		s.Logger.Debugw("unable to attach namespace manager rolebinding to namespace", "error", err)
 		return nil, errors.Join(err, errInvalidRoleBinding)
 	}
@@ -113,10 +114,13 @@ func attachRoleBinding(ctx context.Context, client *kubernetes.Clientset, namesp
 
 // newDeployment deploys a loadBalancer based upon the configuration provided
 // from the event that is processed.
-func (s *Server) newDeployment(lb *loadBalancer) error {
+func (s *Server) newDeployment(ctx context.Context, lb *loadBalancer) error {
+	ctx, span := otel.Tracer(instrumentationName).Start(ctx, "newDeployment")
+	defer span.End()
+
 	hash := hashLBName(lb.loadBalancerID.String())
 
-	if _, err := s.CreateNamespace(hash); err != nil {
+	if _, err := s.CreateNamespace(ctx, hash); err != nil {
 		s.Logger.Errorw("unable to create namespace", "error", err, "namespace", hash, "loadBalancer", lb.loadBalancerID.String())
 		return err
 	}
@@ -156,7 +160,10 @@ func (s *Server) newDeployment(lb *loadBalancer) error {
 	return nil
 }
 
-func (s *Server) updateDeployment(lb *loadBalancer) error {
+func (s *Server) updateDeployment(ctx context.Context, lb *loadBalancer) error {
+	_, span := otel.Tracer(instrumentationName).Start(ctx, "updateDeployment")
+	defer span.End()
+
 	hash := hashLBName(lb.loadBalancerID.String())
 
 	releaseName := fmt.Sprintf("lb-%s", hash)
@@ -190,7 +197,10 @@ func (s *Server) updateDeployment(lb *loadBalancer) error {
 	return nil
 }
 
-func (s *Server) removeDeployment(lb *loadBalancer) error {
+func (s *Server) removeDeployment(ctx context.Context, lb *loadBalancer) error {
+	ctx, span := otel.Tracer(instrumentationName).Start(ctx, "removeDeployment")
+	defer span.End()
+
 	hash := hashLBName(lb.loadBalancerID.String())
 
 	releaseName := fmt.Sprintf("lb-%s", hash)
@@ -214,7 +224,7 @@ func (s *Server) removeDeployment(lb *loadBalancer) error {
 
 	s.Logger.Infow("loadbalancer removed successfully", "releaseName", releaseName, "loadBalancer", lb.loadBalancerID.String())
 
-	err = s.removeNamespace(hash)
+	err = s.removeNamespace(ctx, hash)
 	if err != nil {
 		s.Logger.Errorw("unable to remove namespace", "error", err, "namespace", hash, "loadBalancer", lb.loadBalancerID.String())
 		return err
@@ -237,7 +247,7 @@ func hashLBName(name string) string {
 	return hex.EncodeToString([]byte(name))
 }
 
-func (s *Server) createDeployment(_ context.Context, lb *loadBalancer) error {
+func (s *Server) createDeployment(ctx context.Context, lb *loadBalancer) error {
 	hash := hashLBName(lb.loadBalancerID.String())
 
 	releaseName := fmt.Sprintf("lb-%s", hash)
@@ -255,15 +265,15 @@ func (s *Server) createDeployment(_ context.Context, lb *loadBalancer) error {
 	histClient.Max = 1
 
 	if _, err := histClient.Run(releaseName); errors.Is(err, driver.ErrReleaseNotFound) {
-		err = s.newDeployment(lb)
+		err = s.newDeployment(ctx, lb)
 		if err != nil && !errors.Is(err, driver.ErrReleaseExists) {
 			return err
 		}
 	}
 
-	b := s.BackoffConfig.Start(s.Context)
+	b := s.BackoffConfig.Start(ctx)
 	for backoff.Continue(b) {
-		err = s.updateDeployment(lb)
+		err = s.updateDeployment(ctx, lb)
 		if err == nil {
 			return nil
 		} else {

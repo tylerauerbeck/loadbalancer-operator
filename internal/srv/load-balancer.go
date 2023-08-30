@@ -1,18 +1,24 @@
 package srv
 
 import (
+	"context"
 	"errors"
 
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/gidx"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
-func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) (*loadBalancer, error) {
+func (s *Server) newLoadBalancer(ctx context.Context, subj gidx.PrefixedID, adds []gidx.PrefixedID) (*loadBalancer, error) {
 	l := new(loadBalancer)
 	l.isLoadBalancer(subj, adds)
 
+	ctx, span := otel.Tracer(instrumentationName).Start(ctx, "newLoadBalancer")
+	defer span.End()
+
 	if l.lbType != typeNoLB {
-		data, err := s.APIClient.GetLoadBalancer(s.Context, l.loadBalancerID.String())
+		data, err := s.APIClient.GetLoadBalancer(ctx, l.loadBalancerID.String())
 		if err != nil {
 			if errors.Is(err, lbapi.ErrLBNotfound) {
 				// ack and drop msg
@@ -20,6 +26,8 @@ func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) (
 			}
 
 			s.Logger.Errorw("unable to get loadbalancer from API", "error", err, "loadBalancer", l.loadBalancerID.String())
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 
 			return nil, err
 		}

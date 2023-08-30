@@ -22,6 +22,7 @@ import (
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/oauth2x"
+	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/versionx"
 	"go.infratographer.com/x/viperx"
 
@@ -168,6 +169,11 @@ func process(ctx context.Context, logger *zap.SugaredLogger) error {
 	} else {
 		server.APIClient = lbapi.NewClient(viper.GetString("supergraph-endpoint"))
 		server.IPAMClient = ipamclient.NewClient(viper.GetString("supergraph-endpoint"))
+	}
+
+	err = otelx.InitTracer(config.AppConfig.Tracing, appName, logger)
+	if err != nil {
+		logger.Fatalw("failed to initialize tracer", "error", err)
 	}
 
 	if err := server.Run(cx); err != nil {

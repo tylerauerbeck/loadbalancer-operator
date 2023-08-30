@@ -91,11 +91,11 @@ func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:gove
 			s.KubeClient = tc.cfg
 			s.Chart = tc.chart
 
-			lb, err := s.newLoadBalancer(tc.msg.SubjectID, tc.msg.AdditionalSubjectIDs)
+			lb, err := s.newLoadBalancer(context.TODO(), tc.msg.SubjectID, tc.msg.AdditionalSubjectIDs)
 
 			assert.Nil(suite.T(), err)
 
-			err = s.processLoadBalancerChangeCreate(lb)
+			err = s.processLoadBalancerChangeCreate(context.TODO(), lb)
 
 			if len(tc.expectedErrors) > 0 {
 				assert.Error(suite.T(), err)
@@ -178,16 +178,16 @@ func (suite *srvTestSuite) TestProcessLoadBalancerDelete() { //nolint:govet
 			s.KubeClient = tc.cfg
 			s.Chart = tc.chart
 
-			lb, err := s.newLoadBalancer(tc.msg.SubjectID, tc.msg.AdditionalSubjectIDs)
+			lb, err := s.newLoadBalancer(context.TODO(), tc.msg.SubjectID, tc.msg.AdditionalSubjectIDs)
 
 			assert.Nil(suite.T(), err)
 
-			_ = s.processLoadBalancerChangeCreate(lb)
+			_ = s.processLoadBalancerChangeCreate(context.TODO(), lb)
 
 			// TODO: check if the namespace was created
 			// TODO: check if helm release exists
 
-			err = s.processLoadBalancerChangeDelete(lb)
+			err = s.processLoadBalancerChangeDelete(context.TODO(), lb)
 
 			if tc.expectError {
 				assert.Error(suite.T(), err)
@@ -236,13 +236,13 @@ func (suite *srvTestSuite) TestProcessLoadBalancerUpdate() { //nolint:govet
 	}
 
 	id := gidx.MustNewID("loadbal")
-	lb, _ := srv.newLoadBalancer(id, nil)
+	lb, _ := srv.newLoadBalancer(context.TODO(), id, nil)
 
-	err = srv.processLoadBalancerChangeCreate(lb)
+	err = srv.processLoadBalancerChangeCreate(context.TODO(), lb)
 
 	assert.NoError(suite.T(), err)
 
-	u := srv.processLoadBalancerChangeUpdate(lb)
+	u := srv.processLoadBalancerChangeUpdate(context.TODO(), lb)
 
 	assert.NoError(suite.T(), u)
 }

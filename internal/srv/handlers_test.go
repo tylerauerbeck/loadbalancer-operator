@@ -103,12 +103,12 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 		utils.ErrPanic("unable to publish message", err)
 	}
 
-	err = srv.configureSubscribers()
+	err = srv.configureSubscribers(context.TODO())
 	if err != nil {
 		utils.ErrPanic("unable to configure subscribers", err)
 	}
 
-	go srv.processChange(srv.changeChannels[0])
+	go srv.listenChange(srv.changeChannels[0])
 	// TODO: check that namespace exists
 	// TODO: check that release exists
 
@@ -201,9 +201,9 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 		utils.ErrPanic("unable to publish message", err)
 	}
 
-	_ = srv.configureSubscribers()
+	_ = srv.configureSubscribers(context.TODO())
 
-	go srv.processEvent(srv.eventChannels[0])
+	go srv.listenEvent(srv.eventChannels[0])
 
 	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{
 		EventType:            "update",

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
+	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/oauth2x"
 
 	"go.infratographer.com/loadbalanceroperator/internal/config"
@@ -44,17 +45,12 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.loadbalanceroperator.yaml)")
 
-	rootCmd.PersistentFlags().Bool("debug", false, "enable debug logging")
-	viperx.MustBindFlag(viper.GetViper(), "debug", rootCmd.PersistentFlags().Lookup("debug"))
-
-	rootCmd.PersistentFlags().Bool("pretty", false, "enable pretty (human readable) logging output")
-	viperx.MustBindFlag(viper.GetViper(), "logging.pretty", rootCmd.PersistentFlags().Lookup("pretty"))
-
 	rootCmd.PersistentFlags().String("healthcheck-port", ":8080", "port to run healthcheck probe on")
 	viperx.MustBindFlag(viper.GetViper(), "healthcheck-port", rootCmd.PersistentFlags().Lookup("healthcheck-port"))
 
-	events.MustViperFlags(viper.GetViper(), processCmd.Flags(), appName)
-	oauth2x.MustViperFlags(viper.GetViper(), rootCmd.Flags())
+	loggingx.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
+	events.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags(), appName)
+	oauth2x.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -88,28 +84,7 @@ func initConfig() {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 
-	setupLogging()
-}
-
-func setupLogging() {
-	cfg := zap.NewProductionConfig()
-	if viper.GetBool("logging.pretty") {
-		cfg = zap.NewDevelopmentConfig()
-	}
-
-	if viper.GetBool("logging.debug") {
-		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	}
-
-	l, err := cfg.Build()
-	if err != nil {
-		panic(err)
-	}
-
-	logger = l.Sugar().With("app", "loadbalanceroperator")
-	defer logger.Sync() //nolint:errcheck
+	logger = loggingx.InitLogger(appName, config.AppConfig.Logging)
 }
 
 // setupAppConfig loads our config.AppConfig struct with the values bound by

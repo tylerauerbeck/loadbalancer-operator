@@ -7,16 +7,16 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 )
 
-func (s *Server) processLoadBalancerChangeCreate(lb *loadBalancer) error {
-	if err := s.createDeployment(context.TODO(), lb); err != nil {
+func (s *Server) processLoadBalancerChangeCreate(ctx context.Context, lb *loadBalancer) error {
+	if err := s.createDeployment(ctx, lb); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Server) processLoadBalancerChangeDelete(lb *loadBalancer) error {
-	if err := s.removeDeployment(lb); err != nil {
+func (s *Server) processLoadBalancerChangeDelete(ctx context.Context, lb *loadBalancer) error {
+	if err := s.removeDeployment(ctx, lb); err != nil {
 		if errors.Is(err, driver.ErrReleaseNotFound) {
 			// release does not exist, ack and move on
 			return nil
@@ -28,8 +28,8 @@ func (s *Server) processLoadBalancerChangeDelete(lb *loadBalancer) error {
 	return nil
 }
 
-func (s *Server) processLoadBalancerChangeUpdate(lb *loadBalancer) error {
-	if err := s.createDeployment(context.TODO(), lb); err != nil {
+func (s *Server) processLoadBalancerChangeUpdate(ctx context.Context, lb *loadBalancer) error {
+	if err := s.createDeployment(ctx, lb); err != nil {
 		if errors.Is(err, driver.ErrReleaseNotFound) {
 			// release does not exist, ack and move on
 			return nil

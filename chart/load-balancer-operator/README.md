@@ -9,7 +9,7 @@ A Helm chart to deploy the infratographer load-balancer-operator
 This chart will only deploy the load-balancer-operator. It is expected that you created the necessary ConfigMaps and Secrets required to deploy this application and have it connect to the appropriate eventing system (currently NATS).
 The following is expected:
 
-###Chart ConfigMap
+### Chart ConfigMap
 
 By default, this chart will look for a ConfigMap called `lb-chart` and will expect the following keys:
 - chart.tgz - This is the binaryData of a helm chart tarball that the load-balancer-operator will be deploying

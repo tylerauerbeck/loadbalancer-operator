@@ -12,3 +12,18 @@ data:
   LOADBALANCEROPERATOR_CHART_PATH: "/chart.tgz"
   LOADBALANCEROPERATOR_CHART_VALUES_PATH: "/lb-values.yaml"
   LOADBALANCEROPERATOR_OIDC_CLIENT_ISSUER: "{{ .Values.operator.api.oidc.client.issuer }}"
+{{- if .Values.operator.tracing.enabled }}
+  LOADBALANCERAPI_TRACING_ENABLED: "{{ .Values.operator.tracing.enabled }}"
+  LOADBALANCERAPI_TRACING_PROVIDER: "{{ .Values.operator.tracing.provider }}"
+  LOADBALANCERAPI_TRACING_ENVIRONMENT: "{{ .Values.operator.tracing.environment }}"
+{{- if eq .Values.operator.tracing.provider "jaeger" }}
+  LOADBALANCERAPI_TRACING_JAEGER_ENDPOINT: "{{ .Values.operator.tracing.jaeger.endpoint }}"
+  LOADBALANCERAPI_TRACING_JAEGER_USER: "{{ .Values.operator.tracing.jaeger.user }}"
+  LOADBALANCERAPI_TRACING_JAEGER_PASSWORD: "{{ .Values.operator.tracing.jaeger.password }}"
+{{- end }}
+{{- if eq .Values.operator.tracing.provider "otlpgrpc" }}
+  LOADBALANCERAPI_TRACING_OTLP_ENDPOINT: "{{ .Values.operator.tracing.otlp.endpoint }}"
+  LOADBALANCERAPI_TRACING_OTLP_INSECURE: "{{ .Values.operator.tracing.otlp.insecure }}"
+  LOADBALANCERAPI_TRACING_OTLP_CERTIFICATE: "{{ .Values.operator.tracing.otlp.certificate }}"
+{{- end }}
+{{- end }}

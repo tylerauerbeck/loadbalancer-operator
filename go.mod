@@ -206,7 +206,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.infratographer.com/loadbalancer-manager-haproxy v0.0.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.42.0 // indirect
-	go.opentelemetry.io/otel v1.16.0 // indirect
+	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 )

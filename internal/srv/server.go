@@ -14,6 +14,9 @@ import (
 	"go.infratographer.com/ipam-api/pkg/ipamclient"
 )
 
+// instrumentationName is a unique package name used for tracing
+const instrumentationName = "go.infratographer.com/loadbalanceroperator/srv"
+
 // Server holds options for server connectivity and settings
 type Server struct {
 	APIClient        *lbapi.Client
@@ -50,17 +53,17 @@ func (s *Server) Run(ctx context.Context) error {
 
 	s.Logger.Infow("starting subscribers")
 
-	if err := s.configureSubscribers(); err != nil {
+	if err := s.configureSubscribers(ctx); err != nil {
 		s.Logger.Errorw("unable to configure subscribers", "error", err)
 		return err
 	}
 
 	for _, ch := range s.changeChannels {
-		go s.processChange(ch)
+		go s.listenChange(ch)
 	}
 
 	for _, ev := range s.eventChannels {
-		go s.processEvent(ev)
+		go s.listenEvent(ev)
 	}
 
 	return nil
@@ -75,7 +78,7 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func (s *Server) configureSubscribers() error {
+func (s *Server) configureSubscribers(ctx context.Context) error {
 	var ch []<-chan events.Message[events.ChangeMessage]
 
 	var ev []<-chan events.Message[events.EventMessage]
@@ -83,7 +86,7 @@ func (s *Server) configureSubscribers() error {
 	for _, topic := range s.ChangeTopics {
 		s.Logger.Debugw("subscribing to change topic", "topic", topic)
 
-		c, err := s.EventsConnection.SubscribeChanges(s.Context, topic)
+		c, err := s.EventsConnection.SubscribeChanges(ctx, topic)
 		if err != nil {
 			s.Logger.Errorw("unable to subscribe to change topic", "error", err, "topic", topic, "type", "change")
 			return errSubscriptionCreate
@@ -95,7 +98,7 @@ func (s *Server) configureSubscribers() error {
 	for _, topic := range s.EventTopics {
 		s.Logger.Debugw("subscribing to event topic", "topic", topic)
 
-		e, err := s.EventsConnection.SubscribeEvents(s.Context, topic)
+		e, err := s.EventsConnection.SubscribeEvents(ctx, topic)
 		if err != nil {
 			s.Logger.Errorw("unable to subscribe to event topic", "error", err, "topic", topic, "type", "event")
 			return errSubscriptionCreate
