@@ -2,6 +2,7 @@ package srv
 
 import (
 	"context"
+	"time"
 
 	"github.com/lestrrat-go/backoff/v2"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
@@ -12,7 +13,14 @@ import (
 	"k8s.io/client-go/rest"
 
 	"go.infratographer.com/ipam-api/pkg/ipamclient"
+
+	lock "github.com/viney-shih/go-lock"
 )
+
+type lbLock struct {
+	Timestamp time.Time
+	lock      lock.RWMutex
+}
 
 // Server holds options for server connectivity and settings
 type Server struct {
@@ -36,6 +44,7 @@ type Server struct {
 	ServicePortKey   string
 	ContainerPortKey string
 	MetricsPort      int
+	loadbalancers    map[string]lbLock
 }
 
 // Run will start the server queue connections and healthcheck endpoints

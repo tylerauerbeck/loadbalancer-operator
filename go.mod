@@ -174,6 +174,7 @@ require (
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20230714182844-3e04114ae69a // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/viney-shih/go-lock v1.1.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect

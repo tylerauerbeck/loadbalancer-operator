@@ -80,6 +80,12 @@ func (s *Server) processChange(messages <-chan events.Message[events.ChangeMessa
 				}
 			}
 
+			id := &lb.loadBalancerID
+			if id != "" {
+				chk := s.loadbalancers[id.String()]
+				chk.Timestamp = m.Timestamp
+			}
+
 			if lb != nil && lb.lbType != typeNoLB {
 				switch {
 				case m.EventType == string(events.CreateChangeType) && lb.lbType == typeLB:

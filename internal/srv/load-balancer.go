@@ -2,14 +2,33 @@ package srv
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
+	"time"
 
+	lock "github.com/viney-shih/go-lock"
 	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
 	"go.infratographer.com/x/gidx"
 )
 
-func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID) (*loadBalancer, error) {
+func (s *Server) newLoadBalancer(subj gidx.PrefixedID, adds []gidx.PrefixedID, timestamp time.Time) (*loadBalancer, error) {
 	l := new(loadBalancer)
 	l.isLoadBalancer(subj, adds)
+
+	time.Sleep(time.Duration(rand.Int63n(int64(2*time.Second))) / 2)
+	// check
+
+	lock := s.checkLock(l.loadBalancerID.String())
+
+	ok := lock.lock.TryLockWithTimeout(1 * time.Minute)
+
+	if !ok || !timestamp.After(lock.Timestamp) {
+		fmt.Println("something bad happened")
+		// need to nak or error or whatevs
+		// return specific error so we can say something different
+	} else {
+		lock.lock.Lock()
+	}
 
 	if l.lbType != typeNoLB {
 		data, err := s.APIClient.GetLoadBalancer(s.Context, l.loadBalancerID.String())
@@ -60,4 +79,16 @@ func getLBFromAddSubjs(adds []gidx.PrefixedID) (bool, gidx.PrefixedID) {
 	id := new(gidx.PrefixedID)
 
 	return false, *id
+}
+
+func (s *Server) checkLock(id string) *lbLock {
+	lk, ok := s.loadbalancers[id]
+	if !ok {
+		lock := lock.NewCASMutex()
+		s.loadbalancers[id] = lbLock{lock: lock}
+
+		return &lk
+	}
+
+	return &lk
 }
