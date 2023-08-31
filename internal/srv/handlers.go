@@ -49,14 +49,14 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 			}
 		}
 
-		span.SetAttributes(
-			attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
-			attribute.String("message.event", m.EventType),
-			attribute.String("message.id", msg.ID()),
-			attribute.String("message.subject", m.SubjectID.String()),
-		)
-
 		if err != nil && lb.lbType != typeNoLB {
+			span.SetAttributes(
+				attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
+				attribute.String("message.event", m.EventType),
+				attribute.String("message.id", msg.ID()),
+				attribute.String("message.subject", m.SubjectID.String()),
+			)
+
 			switch {
 			case m.EventType == "ip-address.assigned":
 				s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
@@ -110,14 +110,14 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 			}
 		}
 
-		span.SetAttributes(
-			attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
-			attribute.String("message.event", m.EventType),
-			attribute.String("message.id", msg.ID()),
-			attribute.String("message.subject", m.SubjectID.String()),
-		)
-
 		if err != nil && lb.lbType != typeNoLB {
+			span.SetAttributes(
+				attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
+				attribute.String("message.event", m.EventType),
+				attribute.String("message.id", msg.ID()),
+				attribute.String("message.subject", m.SubjectID.String()),
+			)
+
 			switch {
 			case m.EventType == string(events.CreateChangeType) && lb.lbType == typeLB:
 				s.Logger.Debugw("creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
