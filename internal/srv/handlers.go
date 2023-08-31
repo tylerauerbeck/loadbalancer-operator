@@ -39,10 +39,6 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 	ctx, span := otel.Tracer(instrumentationName).Start(m.GetTraceContext(s.Context), "processEvent")
 	defer span.End()
 
-	span.SetAttributes(
-		attribute.String("loadbalancer.id", m.SubjectID.String()),
-	)
-
 	if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
 		if m.EventType == string("ip-address.unassigned") {
 			lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
@@ -53,7 +49,14 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 			}
 		}
 
-		if lb != nil && lb.lbType != typeNoLB {
+		span.SetAttributes(
+			attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
+			attribute.String("message.event", m.EventType),
+			attribute.String("message.id", msg.ID()),
+			attribute.String("message.subject", m.SubjectID.String()),
+		)
+
+		if err != nil && lb.lbType != typeNoLB {
 			switch {
 			case m.EventType == "ip-address.assigned":
 				s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
@@ -97,10 +100,6 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 	ctx, span := otel.Tracer(instrumentationName).Start(m.GetTraceContext(s.Context), "processChange")
 	defer span.End()
 
-	span.SetAttributes(
-		attribute.String("loadbalancer.id", m.SubjectID.String()),
-	)
-
 	if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
 		if m.EventType == string(events.DeleteChangeType) && m.SubjectID.Prefix() == LBPrefix {
 			lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
@@ -111,7 +110,14 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 			}
 		}
 
-		if lb != nil && lb.lbType != typeNoLB {
+		span.SetAttributes(
+			attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
+			attribute.String("message.event", m.EventType),
+			attribute.String("message.id", msg.ID()),
+			attribute.String("message.subject", m.SubjectID.String()),
+		)
+
+		if err != nil && lb.lbType != typeNoLB {
 			switch {
 			case m.EventType == string(events.CreateChangeType) && lb.lbType == typeLB:
 				s.Logger.Debugw("creating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
