@@ -269,6 +269,10 @@ func (s *Server) createDeployment(ctx context.Context, lb *loadBalancer) error {
 		if err != nil && !errors.Is(err, driver.ErrReleaseExists) {
 			return err
 		}
+
+		if err == nil {
+			return nil
+		}
 	}
 
 	b := s.BackoffConfig.Start(ctx)
