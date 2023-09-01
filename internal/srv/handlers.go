@@ -49,7 +49,7 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 			}
 		}
 
-		if err != nil && lb.lbType != typeNoLB {
+		if err == nil && lb.lbType != typeNoLB {
 			span.SetAttributes(
 				attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
 				attribute.String("message.event", m.EventType),
@@ -110,7 +110,7 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 			}
 		}
 
-		if err != nil && lb.lbType != typeNoLB {
+		if err == nil && lb.lbType != typeNoLB {
 			span.SetAttributes(
 				attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
 				attribute.String("message.event", m.EventType),
