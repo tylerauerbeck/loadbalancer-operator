@@ -9,7 +9,7 @@ import (
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"

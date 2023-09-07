@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 	"go.infratographer.com/x/gidx"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"

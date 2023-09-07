@@ -1,7 +1,7 @@
 package srv
 
 import (
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 	"go.infratographer.com/x/gidx"
 )
 
@@ -15,6 +15,6 @@ const (
 
 type loadBalancer struct {
 	loadBalancerID gidx.PrefixedID
-	lbData         *lbapi.GetLoadBalancer
+	lbData         *lbapi.LoadBalancer
 	lbType         int
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 
 	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
 

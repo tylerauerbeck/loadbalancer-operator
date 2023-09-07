@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/lestrrat-go/backoff/v2"
-	"go.infratographer.com/loadbalancer-manager-haproxy/pkg/lbapi"
+	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.uber.org/zap"
