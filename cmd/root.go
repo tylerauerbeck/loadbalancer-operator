@@ -13,6 +13,7 @@ import (
 
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/oauth2x"
+	"go.infratographer.com/x/otelx"
 
 	"go.infratographer.com/loadbalanceroperator/internal/config"
 
@@ -51,6 +52,7 @@ func init() {
 	loggingx.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
 	events.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags(), appName)
 	oauth2x.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
+	otelx.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
