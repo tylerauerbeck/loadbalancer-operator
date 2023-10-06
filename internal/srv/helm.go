@@ -1,11 +1,14 @@
 package srv
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
@@ -33,6 +36,9 @@ func (v helmvalues) generateLBHelmVals(lb *loadBalancer, s *Server) {
 	if len(lb.lbData.IPAddresses) > 0 {
 		v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".lbIP", lb.lbData.IPAddresses[0].IP))
 	}
+
+	//  add dataplane api secret
+	v.StringValues = append(v.StringValues, fmt.Sprintf("%s=%s", managedHelmKeyPrefix+".dataPlaneAPICreds", generateSecret()))
 
 	// add port values
 	var cport, sport []interface{}
@@ -104,4 +110,19 @@ func (s *Server) newHelmValues(lb *loadBalancer) (map[string]interface{}, error)
 	}
 
 	return values, nil
+}
+
+// generateSecret generate base64-encoded random 32-byte alphanumeric string
+func generateSecret() string {
+	const rlen = 32
+
+	alphaNum := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := make([]rune, rlen)
+
+	for i := range r {
+		r[i] = alphaNum[rnd.Intn(len(alphaNum))]
+	}
+
+	return base64.StdEncoding.EncodeToString([]byte(string(r)))
 }
