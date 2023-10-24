@@ -39,6 +39,7 @@ type Server struct {
 	ServicePortKey   string
 	ContainerPortKey string
 	MetricsPort      int
+	LoadBalancers    map[string]*runner
 }
 
 // Run will start the server queue connections and healthcheck endpoints

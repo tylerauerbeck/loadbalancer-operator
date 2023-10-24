@@ -150,3 +150,7 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 		s.Logger.Errorw("unable to acknowledge message", "error", err, "messageID", msg.ID())
 	}
 }
+
+func checkChannel[M Message](msg M, s *Server) error {
+	return nil
+}
