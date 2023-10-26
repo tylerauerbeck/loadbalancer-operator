@@ -34,7 +34,7 @@ func (r *runner) listen() {
 	}
 }
 
-func new(tr taskRunner) *runner {
+func NewRunner(tr taskRunner) *runner {
 	r := &runner{
 		reader:     make(chan lbTask),
 		writer:     make(chan lbTask),

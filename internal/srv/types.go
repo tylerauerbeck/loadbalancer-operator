@@ -42,6 +42,7 @@ type taskRunner func(lbTask)
 type Message interface {
 	events.EventMessage | events.ChangeMessage
 	GetTraceContext(ctx context.Context) context.Context
+	GetEventType() string
 	GetSubject() gidx.PrefixedID
 	GetAddSubjects() []gidx.PrefixedID
 }
