@@ -29,26 +29,16 @@ func (s *Server) listenEvent(messages <-chan events.Message[events.EventMessage]
 }
 
 func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
-	// var lb *loadBalancer
-
-	// var err error
-
 	m := msg.Message()
 
 	ctx, span := otel.Tracer(instrumentationName).Start(m.GetTraceContext(s.Context), "processEvent")
 	defer span.End()
 
 	lb, err := prepareLoadBalancer[events.EventMessage](ctx, m, s)
-
-	// if slices.ContainsFunc(m.AdditionalSubjectIDs, s.locationCheck) || len(s.Locations) == 0 {
-	// if m.EventType == string("ip-address.unassigned") {
-	// lb = &loadBalancer{loadBalancerID: m.SubjectID, lbData: nil, lbType: typeLB}
-	// } else {
-	// 	lb, err = s.newLoadBalancer(ctx, m.SubjectID, m.AdditionalSubjectIDs)
-	// 	if err != nil {
-	// 		s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancerID", m.SubjectID.String())
-	// 	}
-	// }
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
 
 	if err == nil && lb != nil && lb.lbType != typeNoLB {
 		span.SetAttributes(
@@ -58,25 +48,24 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 			attribute.String("message.subject", m.SubjectID.String()),
 		)
 
-		switch {
-		case m.EventType == "ip-address.assigned":
-			s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
-
-			if err := s.createDeployment(ctx, lb); err != nil {
-				s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancer", lb.loadBalancerID.String())
-			}
-		case m.EventType == "ip-address.unassigned":
-			s.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
-		default:
-			s.Logger.Debugw("unknown event", "loadbalancer", lb.loadBalancerID.String(), "event", m.EventType)
-		}
+		ch := s.checkChannel(ctx, lb)
+		ch.writer <- &lbTask{lb: lb, ctx: ctx}
 	}
+
+	// 	switch {
+	// 	case m.EventType == "ip-address.assigned":
+	// 		s.Logger.Debugw("ip address processed. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+
+	// 		if err := s.createDeployment(ctx, lb); err != nil {
+	// 			s.Logger.Errorw("unable to update loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancer", lb.loadBalancerID.String())
+	// 		}
+	// 	case m.EventType == "ip-address.unassigned":
+	// 		s.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", lb.loadBalancerID.String())
+	// 	default:
+	// 		s.Logger.Debugw("unknown event", "loadbalancer", lb.loadBalancerID.String(), "event", m.EventType)
+	// 	}
 	// }
-
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-	}
+	// // }
 
 	// we need to Acknowledge that we received and processed the message,
 	// otherwise, it will be resent over and over again.
@@ -154,12 +143,24 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 	}
 }
 
-func checkChannel[M Message](ctx context.Context, msg M, s *Server) error {
+func (s *Server) checkChannel(ctx context.Context, lb *loadBalancer) *runner {
+	ctx, span := otel.Tracer(instrumentationName).Start(ctx, "checkChannel")
+	defer span.End()
 
-	if slices.ContainsFunc(M.GetAddSubjects(msg), s.locationCheck) || len(s.Locations) == 0 {
-		return nil
+	ch, ok := s.LoadBalancers[lb.lbData.ID]
+	if !ok {
+		span.SetAttributes(attribute.Bool("channel-exists", false))
+
+		r := NewRunner(ctx, process)
+
+		s.LoadBalancers[lb.lbData.ID] = r
+		ch = r
+		ch.run()
+	} else {
+		span.SetAttributes(attribute.Bool("channel-exists", true))
 	}
-	return nil
+
+	return ch
 }
 
 func prepareLoadBalancer[M Message](ctx context.Context, msg M, s *Server) (*loadBalancer, error) {
@@ -196,15 +197,17 @@ func prepareLoadBalancer[M Message](ctx context.Context, msg M, s *Server) (*loa
 			attribute.String("loadbalancer.id", lb.loadBalancerID.String()),
 			attribute.String("message.event", msg.GetEventType()),
 			attribute.String("message.subject", msg.GetSubject().String()),
+			attribute.Bool("trackedLocation", true),
 		)
 
 		return lb, nil
 	}
 
-	// if err != nil {
-	// 	span.RecordError(err)
-	// 	span.SetStatus(codes.Error, err.Error())
-	// }
+	span.SetAttributes(attribute.Bool("trackedLocation", false))
 
 	return nil, errNotMyMessage
+}
+
+func process(lb *lbTask) {
+	return
 }

@@ -1,5 +1,7 @@
 package srv
 
+import "context"
+
 func (r *runner) stop() {
 	// TODO: announce that we're closing down the runner
 	r.quit <- struct{}{}
@@ -34,11 +36,11 @@ func (r *runner) listen() {
 	}
 }
 
-func NewRunner(tr taskRunner) *runner {
+func NewRunner(ctx context.Context, tr taskRunner) *runner {
 	r := &runner{
-		reader:     make(chan lbTask),
-		writer:     make(chan lbTask),
-		buffer:     make([]lbTask, 0),
+		reader:     make(chan *lbTask),
+		writer:     make(chan *lbTask),
+		buffer:     make([]*lbTask, 0),
 		quit:       make(chan struct{}),
 		taskRunner: tr,
 	}
@@ -46,4 +48,9 @@ func NewRunner(tr taskRunner) *runner {
 	go r.run()
 
 	return r
+}
+
+type lbTask struct {
+	lb  *loadBalancer
+	ctx context.Context
 }
