@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/gidx"

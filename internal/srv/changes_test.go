@@ -18,8 +18,8 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/rest"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 )
 
 func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:govet
@@ -103,8 +103,8 @@ func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:gove
 				assert.Nil(suite.T(), err)
 			}
 
-			//TODO: check if the namespace was created
-			//TODO: check if the helm release exists
+			// TODO: check if the namespace was created
+			// TODO: check if the helm release exists
 		})
 	}
 }

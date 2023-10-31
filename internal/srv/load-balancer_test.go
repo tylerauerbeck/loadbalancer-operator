@@ -8,15 +8,13 @@ import (
 
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 
 	"go.infratographer.com/x/gidx"
 	"go.uber.org/zap"
 )
 
-var (
-	dummyLB = gidx.MustNewID("loadbal")
-)
+var dummyLB = gidx.MustNewID("loadbal")
 
 func (suite *srvTestSuite) TestGetLBFromAddSubjs() { //nolint:govet
 	type testCase struct {

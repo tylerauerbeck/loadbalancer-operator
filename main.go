@@ -1,6 +1,6 @@
 package main
 
-import "go.infratographer.com/loadbalanceroperator/cmd"
+import "go.infratographer.com/load-balancer-operator/cmd"
 
 func main() {
 	cmd.Execute()

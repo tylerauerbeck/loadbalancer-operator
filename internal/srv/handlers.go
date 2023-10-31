@@ -43,7 +43,12 @@ func (s *Server) processEvent(msg events.Message[events.EventMessage]) {
 		} else {
 			lb, err = s.newLoadBalancer(ctx, m.SubjectID, m.AdditionalSubjectIDs)
 			if err != nil {
-				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.ID(), "loadbalancerID", m.SubjectID.String())
+				s.Logger.Errorw("unable to initialize loadbalancer",
+					"error", err,
+					"eventType", m.EventType,
+					"messageID", msg.ID(),
+					"subjectID", m.SubjectID.String(),
+					"additionalSubjects", m.AdditionalSubjectIDs)
 			}
 		}
 
@@ -104,7 +109,12 @@ func (s *Server) processChange(msg events.Message[events.ChangeMessage]) {
 		} else {
 			lb, err = s.newLoadBalancer(ctx, m.SubjectID, m.AdditionalSubjectIDs)
 			if err != nil {
-				s.Logger.Errorw("unable to initialize loadbalancer", "error", err, "messageID", msg.ID(), "subjectID", m.SubjectID.String())
+				s.Logger.Errorw("unable to initialize loadbalancer",
+					"eventType", m.EventType,
+					"error", err,
+					"messageID", msg.ID(),
+					"subjectID", m.SubjectID.String(),
+					"additionalSubjects", m.AdditionalSubjectIDs)
 			}
 		}
 

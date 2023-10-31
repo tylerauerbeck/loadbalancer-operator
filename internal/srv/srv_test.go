@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
+	"go.infratographer.com/load-balancer-operator/internal/utils"
 )
 
 func TestSrvTestSuite(t *testing.T) {

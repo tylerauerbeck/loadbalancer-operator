@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 
 	"go.infratographer.com/x/gidx"
 	"go.uber.org/zap"
@@ -21,9 +21,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-var (
-	dummyLBID = "loadbal-lkjasdlfkjasdf"
-)
+var dummyLBID = "loadbal-lkjasdlfkjasdf"
 
 func (suite *srvTestSuite) TestHashLBName() {
 	hash := hashLBName(dummyLBID)

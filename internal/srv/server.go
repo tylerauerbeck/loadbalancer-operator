@@ -15,7 +15,7 @@ import (
 )
 
 // instrumentationName is a unique package name used for tracing
-const instrumentationName = "go.infratographer.com/loadbalanceroperator/srv"
+const instrumentationName = "go.infratographer.com/load-balancer-operator/srv"
 
 // Server holds options for server connectivity and settings
 type Server struct {

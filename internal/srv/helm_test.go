@@ -16,7 +16,7 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 	"k8s.io/client-go/rest"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 )
 
 // var (

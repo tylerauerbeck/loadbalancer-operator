@@ -26,8 +26,8 @@ import (
 	"go.infratographer.com/x/versionx"
 	"go.infratographer.com/x/viperx"
 
-	"go.infratographer.com/loadbalanceroperator/internal/config"
-	"go.infratographer.com/loadbalanceroperator/internal/srv"
+	"go.infratographer.com/load-balancer-operator/internal/config"
+	"go.infratographer.com/load-balancer-operator/internal/srv"
 )
 
 // processCmd represents the base command when called without any subcommands

@@ -10,8 +10,8 @@ import (
 
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
 
-	"go.infratographer.com/loadbalanceroperator/internal/utils"
-	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
+	"go.infratographer.com/load-balancer-operator/internal/utils"
+	"go.infratographer.com/load-balancer-operator/internal/utils/mock"
 
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
@@ -134,7 +134,7 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 		utils.ErrPanic("unable to publish message -3", err)
 	}
 
-	//TODO: verify some update exists
+	// TODO: verify some update exists
 
 	_, err = srv.EventsConnection.PublishChange(context.TODO(), "load-balancer", events.ChangeMessage{
 		EventType:            string(events.DeleteChangeType),

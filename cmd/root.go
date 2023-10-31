@@ -15,7 +15,7 @@ import (
 	"go.infratographer.com/x/oauth2x"
 	"go.infratographer.com/x/otelx"
 
-	"go.infratographer.com/loadbalanceroperator/internal/config"
+	"go.infratographer.com/load-balancer-operator/internal/config"
 
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/viperx"

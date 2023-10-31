@@ -1,4 +1,4 @@
-module go.infratographer.com/loadbalanceroperator
+module go.infratographer.com/load-balancer-operator
 
 go 1.20
 
