@@ -1,6 +1,8 @@
 package srv
 
-import "context"
+import (
+	"context"
+)
 
 func (r *runner) stop() {
 	// TODO: announce that we're closing down the runner
@@ -53,4 +55,6 @@ func NewRunner(ctx context.Context, tr taskRunner) *runner {
 type lbTask struct {
 	lb  *loadBalancer
 	ctx context.Context
+	evt string
+	srv *Server
 }

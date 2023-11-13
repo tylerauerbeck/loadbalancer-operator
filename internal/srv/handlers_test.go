@@ -7,18 +7,15 @@ import (
 
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"helm.sh/helm/v3/pkg/chart/loader"
 
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
-
 	"go.infratographer.com/loadbalanceroperator/internal/utils"
 	"go.infratographer.com/loadbalanceroperator/internal/utils/mock"
-
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
-
-	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 func (suite *srvTestSuite) TestLocationCheck() { //nolint:govet
@@ -88,6 +85,7 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	// TODO: check that namespace does not exist
@@ -179,9 +177,17 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 
 	loc, _ := gidx.Parse("testloc-abcd1234")
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	srv := Server{
 		APIClient:        lbapi.NewClient(api.URL),
 		Echo:             eSrv,
+		BackoffConfig:    backoffPolicy,
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
 		KubeClient:       suite.Kubeconfig,
@@ -190,6 +196,7 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{

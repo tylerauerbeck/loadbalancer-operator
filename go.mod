@@ -5,7 +5,7 @@ go 1.20
 replace (
 	github.com/docker/cli => github.com/docker/cli v20.10.19+incompatible
 	github.com/docker/docker => github.com/docker/docker v20.10.19+incompatible
-	go.infratographer.com/x => /Users/tylerauerbeck/go/src/github.com/infratographer/x
+	go.infratographer.com/x => github.com/tylerauerbeck/x v0.0.0-20231025144905-3f3834cd4c50
 	oras.land/oras-go => oras.land/oras-go v1.2.2
 )
 

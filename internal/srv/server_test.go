@@ -57,6 +57,7 @@ func (suite *srvTestSuite) TestRun() { //nolint:govet
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	err = srv.Run(srv.Context)

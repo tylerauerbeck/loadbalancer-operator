@@ -17,7 +17,8 @@ func (suite *srvTestSuite) TestVersionHandler() { // nolint:govet
 	require.NoError(suite.T(), err, "unexpected error creating new server")
 
 	s := &Server{
-		Echo: srv,
+		Echo:          srv,
+		LoadBalancers: make(map[string]*runner),
 	}
 
 	s.Echo.AddHandler(s)
