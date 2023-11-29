@@ -497,6 +497,12 @@ func (suite *srvTestSuite) TestAttachRoleBinding() {
 				t.Fatal(err)
 			}
 
+			if !tcase.expectErr {
+				_, err = srv.CreateNamespace(srv.Context, tcase.namespace)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 			err = attachRoleBinding(srv.Context, cli, tcase.namespace)
 
 			if tcase.expectErr {
