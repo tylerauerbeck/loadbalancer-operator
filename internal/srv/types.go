@@ -1,7 +1,10 @@
 package srv
 
 import (
+	"context"
+
 	lbapi "go.infratographer.com/load-balancer-api/pkg/client"
+	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
 )
 
@@ -17,4 +20,12 @@ type loadBalancer struct {
 	loadBalancerID gidx.PrefixedID
 	lbData         *lbapi.LoadBalancer
 	lbType         int
+}
+
+type Message interface {
+	events.EventMessage | events.ChangeMessage
+	GetTraceContext(ctx context.Context) context.Context
+	GetEventType() string
+	GetSubject() gidx.PrefixedID
+	GetAddSubjects() []gidx.PrefixedID
 }

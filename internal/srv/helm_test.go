@@ -37,6 +37,7 @@ func (suite *srvTestSuite) TestGenerateLBHelmVals() {
 		ContainerPortKey: "containerPorts",
 		ServicePortKey:   "service.ports",
 		Logger:           zap.NewNop().Sugar(),
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	lb, _ := s.newLoadBalancer(context.TODO(), id, nil)
@@ -123,6 +124,7 @@ func (suite *srvTestSuite) TestNewHelmValues() {
 				ValuesPath:       tcase.valuesPath,
 				ContainerPortKey: "containerPorts",
 				ServicePortKey:   "service.ports",
+				LoadBalancers:    make(map[string]*runner),
 			}
 
 			lb, _ := srv.newLoadBalancer(context.TODO(), tcase.lb.loadBalancerID, nil)
@@ -164,9 +166,10 @@ func (suite *srvTestSuite) TestNewHelmClient() {
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeClient,
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeClient,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			_, err := srv.newHelmClient(tcase.appNamespace)

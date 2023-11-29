@@ -88,6 +88,7 @@ func (suite *srvTestSuite) TestProcessChange() { //nolint:govet
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	// TODO: check that namespace does not exist
@@ -162,6 +163,13 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 
 	defer os.RemoveAll(testDir)
 
+	backoffPolicy := backoff.Exponential(
+		backoff.WithMinInterval(time.Second),
+		backoff.WithMaxInterval(2*time.Minute),
+		backoff.WithJitterFactor(0.05),
+		backoff.WithMaxRetries(5),
+	)
+
 	chartPath, err := utils.CreateTestChart(testDir)
 	if err != nil {
 		suite.T().Fatal(err)
@@ -181,6 +189,7 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 
 	srv := Server{
 		APIClient:        lbapi.NewClient(api.URL),
+		BackoffConfig:    backoffPolicy,
 		Echo:             eSrv,
 		Context:          context.TODO(),
 		Logger:           zap.NewNop().Sugar(),
@@ -190,6 +199,7 @@ func (suite *srvTestSuite) TestProcessEvent() { //nolint:govet
 		Chart:            ch,
 		ValuesPath:       pwd + "/../../hack/ci/values.yaml",
 		Locations:        []string{"abcd1234"},
+		LoadBalancers:    make(map[string]*runner),
 	}
 
 	_, err = srv.EventsConnection.PublishEvent(context.TODO(), "load-balancer-event", events.EventMessage{

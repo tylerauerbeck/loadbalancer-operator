@@ -138,10 +138,11 @@ func (suite *srvTestSuite) TestCreateNamespace() {
 			defer api.Close()
 
 			srv := Server{
-				APIClient:  lbapi.NewClient(api.URL),
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeclient,
+				APIClient:     lbapi.NewClient(api.URL),
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeclient,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			subj := tcase.id
@@ -223,10 +224,11 @@ func (suite *srvTestSuite) TestRemoveNamespace() {
 			defer api.Close()
 
 			srv := Server{
-				APIClient:  lbapi.NewClient(api.URL),
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeclient,
+				APIClient:     lbapi.NewClient(api.URL),
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeclient,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
@@ -334,12 +336,13 @@ func (suite *srvTestSuite) TestNewDeployment() {
 			defer api.Close()
 
 			srv := Server{
-				APIClient:  lbapi.NewClient(api.URL),
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeClient,
-				ValuesPath: tcase.valPath,
-				Chart:      tcase.chart,
+				APIClient:     lbapi.NewClient(api.URL),
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeClient,
+				ValuesPath:    tcase.valPath,
+				Chart:         tcase.chart,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
@@ -419,12 +422,13 @@ func (suite *srvTestSuite) TestRemoveDeployment() {
 			defer api.Close()
 
 			srv := Server{
-				APIClient:  lbapi.NewClient(api.URL),
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeClient,
-				ValuesPath: tcase.valPath,
-				Chart:      tcase.chart,
+				APIClient:     lbapi.NewClient(api.URL),
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeClient,
+				ValuesPath:    tcase.valPath,
+				Chart:         tcase.chart,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			lb, err := srv.newLoadBalancer(context.TODO(), tcase.id, []gidx.PrefixedID{})
@@ -482,9 +486,10 @@ func (suite *srvTestSuite) TestAttachRoleBinding() {
 	for _, tcase := range testCases {
 		suite.T().Run(tcase.name, func(t *testing.T) {
 			srv := Server{
-				Context:    context.TODO(),
-				Logger:     zap.NewNop().Sugar(),
-				KubeClient: tcase.kubeClient,
+				Context:       context.TODO(),
+				Logger:        zap.NewNop().Sugar(),
+				KubeClient:    tcase.kubeClient,
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			cli, err := kubernetes.NewForConfig(tcase.kubeClient)

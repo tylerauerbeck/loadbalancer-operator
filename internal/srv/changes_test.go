@@ -60,6 +60,7 @@ func (suite *srvTestSuite) TestProcessLoadBalancerChangeCreate() { //nolint:gove
 		ChangeTopics:  []string{"foo", "bar"},
 		ChartPath:     cp,
 		ValuesPath:    pwd + "/../../hack/ci/values.yaml",
+		LoadBalancers: make(map[string]*runner),
 	}
 
 	testCases := []testCase{

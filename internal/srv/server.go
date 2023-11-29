@@ -39,10 +39,14 @@ type Server struct {
 	ServicePortKey   string
 	ContainerPortKey string
 	MetricsPort      int
+	LoadBalancers    map[string]*runner
 }
 
 // Run will start the server queue connections and healthcheck endpoints
 func (s *Server) Run(ctx context.Context) error {
+	// TODO: load up the loadbalancers that this operator is responsible for
+	s.LoadBalancers = make(map[string]*runner)
+
 	s.Echo.AddHandler(s)
 
 	go func() {

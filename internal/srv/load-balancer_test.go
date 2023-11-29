@@ -149,9 +149,10 @@ func (suite *srvTestSuite) TestNewLoadBalancer() { //nolint:govet
 			defer server.Close()
 
 			srv := &Server{
-				APIClient: lbapi.NewClient(server.URL),
-				Logger:    zap.NewNop().Sugar(),
-				Context:   context.TODO(),
+				APIClient:     lbapi.NewClient(server.URL),
+				Logger:        zap.NewNop().Sugar(),
+				Context:       context.TODO(),
+				LoadBalancers: make(map[string]*runner),
 			}
 
 			lb, err := srv.newLoadBalancer(context.TODO(), tc.subj, tc.adds)
@@ -172,9 +173,10 @@ func (suite *srvTestSuite) TestNewLoadBalancer() { //nolint:govet
 
 func (suite *srvTestSuite) TestNewLoadBalancer_InvalidAPI() { //nolint:govet
 	srv := &Server{
-		APIClient: lbapi.NewClient("http://localhost:9999"),
-		Logger:    zap.NewNop().Sugar(),
-		Context:   context.TODO(),
+		APIClient:     lbapi.NewClient("http://localhost:9999"),
+		Logger:        zap.NewNop().Sugar(),
+		Context:       context.TODO(),
+		LoadBalancers: make(map[string]*runner),
 	}
 
 	lb, err := srv.newLoadBalancer(context.TODO(), dummyLB, []gidx.PrefixedID{})
