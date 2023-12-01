@@ -1,5 +1,5 @@
 # binary
-loadbalanceroperator
+load-balancer-operator
 
 # commonly used files that we don't want ending up in our repo
 kubeconfig

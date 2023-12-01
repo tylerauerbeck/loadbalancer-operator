@@ -195,10 +195,12 @@ func process(t *lbTask) {
 	case t.evt == "ip-address.unassigned":
 		t.srv.Logger.Debugw("ip address unassigned. updating loadbalancer", "loadbalancer", t.lb.loadBalancerID.String())
 	default:
-		t.srv.Logger.Debugw("updating loadbalancer", "loadbalancer", t.lb.loadBalancerID.String())
+		if t.evt != string(events.DeleteChangeType) {
+			t.srv.Logger.Debugw("updating loadbalancer", "loadbalancer", t.lb.loadBalancerID.String())
 
-		if err := t.srv.processLoadBalancerChangeUpdate(t.ctx, t.lb); err != nil {
-			t.srv.Logger.Errorw("handler unable to update loadbalancer", "error", err, "loadbalancerID", t.lb.loadBalancerID.String())
+			if err := t.srv.processLoadBalancerChangeUpdate(t.ctx, t.lb); err != nil {
+				t.srv.Logger.Errorw("handler unable to update loadbalancer", "error", err, "loadbalancerID", t.lb.loadBalancerID.String())
+			}
 		}
 	}
 }
